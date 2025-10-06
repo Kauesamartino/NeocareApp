@@ -7,125 +7,73 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Dimensions,
-  Alert,
+  RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { ProfileCompact, ProfileModal } from '../../_components/Profile';
+import { useHealthMetrics } from '../../hooks/useHealthMetrics';
+import { useRecommendations } from '../../hooks/useRecommendations';
+import { useProfileModal } from '../../hooks/useProfileModal';
+import { useDailyData } from '../../hooks/useDailyData';
 
 const { width } = Dimensions.get('window');
 
-interface HealthMetric {
-  title: string;
-  value: string;
-  unit: string;
-  status: 'normal' | 'warning' | 'critical';
-}
-
-interface Recommendation {
-  id: string;
-  title: string;
-  description: string;
-  type: 'breathing' | 'exercise' | 'mindfulness' | 'break';
-}
-
 export default function HomeScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  
+  const { 
+    metrics: healthMetrics, 
+    isLoading: metricsRefreshing, 
+    refreshMetrics, 
+    getStatusColor,
+    getStatusText 
+  } = useHealthMetrics();
+  
+  const { 
+    recommendations, 
+    getRecommendationColor,
+    completeRecommendation 
+  } = useRecommendations();
+  
+  const { 
+    isVisible: isProfileModalVisible, 
+    openProfile: openProfileModal, 
+    closeProfile: closeProfileModal 
+  } = useProfileModal();
+  
+  const { 
+    dailySummary, 
+    sensorStatus, 
+    isRefreshing: dailyRefreshing, 
+    refreshSensorData, 
+    progress 
+  } = useDailyData();
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sair da conta',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Sair', 
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-          }
-        }
-      ]
-    );
+  const isRefreshing = metricsRefreshing || dailyRefreshing;
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refreshMetrics(),
+      refreshSensorData()
+    ]);
   };
 
-  const healthMetrics: HealthMetric[] = [
-    {
-      title: 'Batimentos Cardíacos',
-      value: '72',
-      unit: 'bpm',
-      status: 'normal'
-    },
-    {
-      title: 'Nível de Estresse',
-      value: '3.2',
-      unit: '/10',
-      status: 'warning'
-    },
-    {
-      title: 'Qualidade do Sono',
-      value: '8.5',
-      unit: '/10',
-      status: 'normal'
-    },
-    {
-      title: 'Atividade Física',
-      value: '6,234',
-      unit: 'passos',
-      status: 'normal'
-    }
-  ];
-
-  const recommendations: Recommendation[] = [
-    {
-      id: '1',
-      title: 'Respiração Profunda',
-      description: 'Seu nível de estresse está elevado. Tente 5 minutos de respiração profunda.',
-      type: 'breathing'
-    },
-    {
-      id: '2',
-      title: 'Pausa Ativa',
-      description: 'Que tal fazer uma caminhada de 10 minutos para relaxar?',
-      type: 'exercise'
-    },
-    {
-      id: '3',
-      title: 'Meditação Guiada',
-      description: 'Uma sessão de mindfulness pode ajudar a reduzir a ansiedade.',
-      type: 'mindfulness'
-    }
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'normal':
-        return '#4CAF50';
-      case 'warning':
-        return '#FF9800';
-      case 'critical':
-        return '#F44336';
-      default:
-        return '#757575';
-    }
+  const handleRecommendationPress = (recommendation: any) => {
+    completeRecommendation(recommendation.id);
   };
 
-  const getRecommendationColor = (type: string) => {
-    switch (type) {
-      case 'breathing':
-        return '#E3F2FD';
-      case 'exercise':
-        return '#E8F5E8';
-      case 'mindfulness':
-        return '#F3E5F5';
-      case 'break':
-        return '#FFF3E0';
-      default:
-        return '#F5F5F5';
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -133,19 +81,22 @@ export default function HomeScreen() {
               <Text style={styles.greeting}>Bom dia, {user?.nome?.split(' ')[0] || 'Usuário'}!</Text>
               <Text style={styles.subtitle}>Como você está se sentindo hoje?</Text>
             </View>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutText}>Sair</Text>
-            </TouchableOpacity>
+            <ProfileCompact onPress={() => openProfileModal()} />
           </View>
         </View>
 
         {/* Status do Sensor */}
         <View style={styles.sensorStatus}>
           <View style={styles.sensorIndicator}>
-            <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
-            <Text style={styles.sensorText}>Pulseira conectada</Text>
+            <View style={[styles.statusDot, { backgroundColor: sensorStatus.isConnected ? '#4CAF50' : '#F44336' }]} />
+            <Text style={styles.sensorText}>
+              {sensorStatus.isConnected ? 'Pulseira conectada' : 'Pulseira desconectada'}
+            </Text>
+            {sensorStatus.batteryLevel && (
+              <Text style={styles.batteryText}>Bateria: {sensorStatus.batteryLevel}%</Text>
+            )}
           </View>
-          <Text style={styles.lastSync}>Última sincronização: há 2 min</Text>
+          <Text style={styles.lastSync}>Última sincronização: {sensorStatus.lastSync}</Text>
         </View>
 
         {/* Métricas de Saúde */}
@@ -161,8 +112,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(metric.status) }]}>
                   <Text style={styles.statusText}>
-                    {metric.status === 'normal' ? 'Normal' : 
-                     metric.status === 'warning' ? 'Atenção' : 'Crítico'}
+                    {getStatusText(metric.status)}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -220,6 +170,12 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Profile Modal */}
+      <ProfileModal 
+        visible={isProfileModalVisible} 
+        onClose={closeProfileModal} 
+      />
     </SafeAreaView>
   );
 }
@@ -248,18 +204,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  logoutButton: {
-    backgroundColor: '#F44336',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 5,
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
   sensorStatus: {
     margin: 20,
     marginTop: 0,
@@ -287,6 +232,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+    flex: 1,
+  },
+  batteryText: {
+    fontSize: 14,
+    color: '#666',
   },
   lastSync: {
     fontSize: 14,
