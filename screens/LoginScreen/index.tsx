@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth, setRememberMe } from '../../contexts/AuthContext';
+import { BootstrapEye } from '../../_components/icons/BootstrapEye';
 
 const { width, height } = Dimensions.get('window');
 
@@ -95,7 +96,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
           {/* Welcome Message */}
           <View style={styles.welcomeContainer}>
-            <Text style={styles.welcomeTitle}>Bem-vindo de volta! 👋</Text>
+            <Text style={styles.welcomeTitle}>Bem-vindo de volta!</Text>
             <Text style={styles.welcomeSubtitle}>
               Entre na sua conta para continuar monitorando sua saúde
             </Text>
@@ -133,9 +134,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   style={styles.passwordToggle}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Text style={styles.passwordToggleText}>
-                    {showPassword ? '🙈' : '👁️'}
-                  </Text>
+                  <BootstrapEye
+                    visible={showPassword}
+                    size={18}
+                    color="#666"
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -147,7 +150,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 onPress={() => setRememberMeLocal(!rememberMe)}
               >
                 <Text style={styles.checkboxIcon}>
-                  {rememberMe ? '☑️' : '☐'}
+                  {rememberMe ? '✓' : '□'}
                 </Text>
               </TouchableOpacity>
               <Text style={styles.rememberMeText}>Lembrar de mim</Text>
@@ -178,18 +181,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Social Login */}
-          <View style={styles.socialContainer}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Text style={styles.socialIcon}>🔍</Text>
-              <Text style={styles.socialText}>Continuar com Google</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.socialButton}>
-              <Text style={styles.socialIcon}>📘</Text>
-              <Text style={styles.socialText}>Continuar com Facebook</Text>
-            </TouchableOpacity>
-          </View>
+        
 
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
@@ -276,12 +268,13 @@ const styles = StyleSheet.create({
   passwordToggle: {
     position: 'absolute',
     right: 15,
-    top: 15,
-    padding: 5,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
   },
-  passwordToggleText: {
-    fontSize: 18,
-  },
+
   rememberMeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -292,7 +285,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   checkboxIcon: {
-    fontSize: 20,
+    fontSize: 16,
+    color: '#2196F3',
+    fontWeight: 'bold',
   },
   rememberMeText: {
     flex: 1,
@@ -358,8 +353,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   socialIcon: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: 'bold',
     marginRight: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    textAlign: 'center',
+    lineHeight: 24,
+    color: '#333',
   },
   socialText: {
     fontSize: 16,

@@ -13,6 +13,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { BootstrapEye } from '../../_components/icons/BootstrapEye';
 
 const { width, height } = Dimensions.get('window');
 
@@ -160,7 +161,7 @@ export default function CadastroScreen({ navigation }: CadastroScreenProps) {
 
             {/* Welcome Message */}
             <View style={styles.welcomeContainer}>
-              <Text style={styles.welcomeTitle}>Vamos começar! 🚀</Text>
+              <Text style={styles.welcomeTitle}>Vamos começar!</Text>
               <Text style={styles.welcomeSubtitle}>
                 Preencha os dados abaixo para criar sua conta
               </Text>
@@ -236,9 +237,11 @@ export default function CadastroScreen({ navigation }: CadastroScreenProps) {
                     style={styles.passwordToggle}
                     onPress={() => setShowPassword(!showPassword)}
                   >
-                    <Text style={styles.passwordToggleText}>
-                      {showPassword ? '🙈' : '👁️'}
-                    </Text>
+                    <BootstrapEye
+                      visible={showPassword}
+                      size={18}
+                      color="#666"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -259,9 +262,11 @@ export default function CadastroScreen({ navigation }: CadastroScreenProps) {
                     style={styles.passwordToggle}
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    <Text style={styles.passwordToggleText}>
-                      {showConfirmPassword ? '🙈' : '👁️'}
-                    </Text>
+                    <BootstrapEye
+                      visible={showConfirmPassword}
+                      size={18}
+                      color="#666"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -273,7 +278,7 @@ export default function CadastroScreen({ navigation }: CadastroScreenProps) {
                   onPress={() => setAcceptTerms(!acceptTerms)}
                 >
                   <Text style={styles.checkboxIcon}>
-                    {acceptTerms ? '☑️' : '☐'}
+                    {acceptTerms ? '✓' : '□'}
                   </Text>
                 </TouchableOpacity>
                 <Text style={styles.termsText}>
@@ -300,19 +305,6 @@ export default function CadastroScreen({ navigation }: CadastroScreenProps) {
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>ou</Text>
               <View style={styles.dividerLine} />
-            </View>
-
-            {/* Social Sign Up */}
-            <View style={styles.socialContainer}>
-              <TouchableOpacity style={styles.socialButton}>
-                <Text style={styles.socialIcon}>🔍</Text>
-                <Text style={styles.socialText}>Cadastrar com Google</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.socialButton}>
-                <Text style={styles.socialIcon}>📘</Text>
-                <Text style={styles.socialText}>Cadastrar com Facebook</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Login Link */}
@@ -402,12 +394,13 @@ const styles = StyleSheet.create({
   passwordToggle: {
     position: 'absolute',
     right: 15,
-    top: 15,
-    padding: 5,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
   },
-  passwordToggleText: {
-    fontSize: 18,
-  },
+
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -419,7 +412,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   checkboxIcon: {
-    fontSize: 20,
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: 'bold',
   },
   termsText: {
     flex: 1,
@@ -482,8 +477,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   socialIcon: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: 'bold',
     marginRight: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    textAlign: 'center',
+    lineHeight: 24,
+    color: '#333',
   },
   socialText: {
     fontSize: 16,
