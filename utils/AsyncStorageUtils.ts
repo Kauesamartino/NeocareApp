@@ -49,9 +49,9 @@ export class StorageUtils {
     try {
       const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
       await AsyncStorage.setItem(key, jsonValue);
-      console.log(`✅ Dados salvos: ${key}`);
+      console.log(`Dados salvos: ${key}`);
     } catch (error) {
-      console.error(`❌ Erro ao salvar ${key}:`, error);
+      console.error(`Erro ao salvar ${key}:`, error);
       throw error;
     }
   }
@@ -71,7 +71,7 @@ export class StorageUtils {
         return jsonValue as unknown as T;
       }
     } catch (error) {
-      console.error(`❌ Erro ao recuperar ${key}:`, error);
+      console.error(`Erro ao recuperar ${key}:`, error);
       return null;
     }
   }
@@ -82,9 +82,9 @@ export class StorageUtils {
   static async removeItem(key: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(key);
-      console.log(`🗑️ Item removido: ${key}`);
+      console.log(`Item removido: ${key}`);
     } catch (error) {
-      console.error(`❌ Erro ao remover ${key}:`, error);
+      console.error(`Erro ao remover ${key}:`, error);
       throw error;
     }
   }
@@ -97,7 +97,7 @@ export class StorageUtils {
       await AsyncStorage.multiRemove(keys);
       console.log(`🗑️ Itens removidos: ${keys.join(', ')}`);
     } catch (error) {
-      console.error('❌ Erro ao remover itens:', error);
+      console.error('Erro ao remover itens:', error);
       throw error;
     }
   }
@@ -108,9 +108,9 @@ export class StorageUtils {
   static async clearAll(): Promise<void> {
     try {
       await AsyncStorage.clear();
-      console.log('🧹 AsyncStorage limpo completamente');
+      console.log('AsyncStorage limpo completamente');
     } catch (error) {
-      console.error('❌ Erro ao limpar AsyncStorage:', error);
+      console.error('Erro ao limpar AsyncStorage:', error);
       throw error;
     }
   }
@@ -122,7 +122,7 @@ export class StorageUtils {
     try {
       return await AsyncStorage.getAllKeys();
     } catch (error) {
-      console.error('❌ Erro ao obter chaves:', error);
+      console.error('Erro ao obter chaves:', error);
       return [];
     }
   }
@@ -134,7 +134,7 @@ export class StorageUtils {
     try {
       return await AsyncStorage.multiGet(keys);
     } catch (error) {
-      console.error('❌ Erro ao obter múltiplos itens:', error);
+      console.error('Erro ao obter múltiplos itens:', error);
       return [];
     }
   }
@@ -151,9 +151,9 @@ export class AuthStorage {
         StorageUtils.setItem(STORAGE_KEYS.USER_DATA, userData),
         StorageUtils.setItem(STORAGE_KEYS.USER_TOKEN, token),
       ]);
-      console.log('✅ Sessão do usuário salva');
+      console.log('Sessão do usuário salva');
     } catch (error) {
-      console.error('❌ Erro ao salvar sessão:', error);
+      console.error('Erro ao salvar sessão:', error);
       throw error;
     }
   }
@@ -167,7 +167,7 @@ export class AuthStorage {
 
       return { user: userData, token };
     } catch (error) {
-      console.error('❌ Erro ao recuperar sessão:', error);
+      console.error('Erro ao recuperar sessão:', error);
       return { user: null, token: null };
     }
   }
@@ -180,7 +180,7 @@ export class AuthStorage {
       ]);
       console.log('🗑️ Sessão do usuário removida');
     } catch (error) {
-      console.error('❌ Erro ao limpar sessão:', error);
+      console.error('Erro ao limpar sessão:', error);
       throw error;
     }
   }
@@ -214,9 +214,9 @@ export class HealthStorage {
       };
       
       await StorageUtils.setItem(STORAGE_KEYS.HEALTH_DATA, updatedData);
-      console.log('💓 Dados de saúde salvos');
+      console.log('Dados de saúde salvos');
     } catch (error) {
-      console.error('❌ Erro ao salvar dados de saúde:', error);
+      console.error('Erro ao salvar dados de saúde:', error);
       throw error;
     }
   }
@@ -248,9 +248,9 @@ export class PreferencesStorage {
       };
       
       await StorageUtils.setItem(STORAGE_KEYS.USER_PREFERENCES, updatedPrefs);
-      console.log('⚙️ Preferências salvas');
+      console.log('Preferências salvas');
     } catch (error) {
-      console.error('❌ Erro ao salvar preferências:', error);
+      console.error('Erro ao salvar preferências:', error);
       throw error;
     }
   }
@@ -287,7 +287,7 @@ export class DebugStorage {
       
       console.log('=== Fim do Debug ===\n');
     } catch (error) {
-      console.error('❌ Erro no debug:', error);
+      console.error('Erro no debug:', error);
     }
   }
 
@@ -305,7 +305,7 @@ export class DebugStorage {
       
       return totalSize;
     } catch (error) {
-      console.error('❌ Erro ao calcular tamanho:', error);
+      console.error('Erro ao calcular tamanho:', error);
       return 0;
     }
   }
