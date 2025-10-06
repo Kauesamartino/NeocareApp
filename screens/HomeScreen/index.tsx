@@ -7,7 +7,9 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +28,25 @@ interface Recommendation {
 }
 
 export default function HomeScreen() {
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair da conta',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+          }
+        }
+      ]
+    );
+  };
+
   const healthMetrics: HealthMetric[] = [
     {
       title: 'Batimentos Cardíacos',
@@ -107,8 +128,15 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Bom dia!</Text>
-          <Text style={styles.subtitle}>Como você está se sentindo hoje?</Text>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.greeting}>Bom dia, {user?.nome?.split(' ')[0] || 'Usuário'}!</Text>
+              <Text style={styles.subtitle}>Como você está se sentindo hoje?</Text>
+            </View>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutText}>Sair</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Status do Sensor */}
@@ -205,6 +233,11 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 10,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
   greeting: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -214,6 +247,18 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#666',
+  },
+  logoutButton: {
+    backgroundColor: '#F44336',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 5,
+  },
+  logoutText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   sensorStatus: {
     margin: 20,
