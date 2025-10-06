@@ -140,6 +140,12 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
                 <Text style={styles.infoValue}>{user?.id || 'N/A'}</Text>
               </View>
             </View>
+
+            <View style={styles.dangerZone}>
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutButtonText}>Sair da conta</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         );
 
@@ -211,12 +217,6 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
               <Text style={styles.settingText}>Suporte</Text>
               <Text style={styles.settingArrow}>›</Text>
             </TouchableOpacity>
-
-            <View style={styles.dangerZone}>
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutButtonText}>Sair da conta</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         );
 
