@@ -99,26 +99,26 @@ Atualmente, **não existe uma ferramenta acessível** que monitore continuamente
 
 ```
 src/
-├── 📱 App.tsx                    # Componente principal e navegação
+├── 📱 App.tsx                    
 ├── 🔐 contexts/
-│   └── AuthContext.tsx          # Contexto de autenticação global
+│   └── AuthContext.tsx          
 ├── 📺 screens/
-│   ├── HomeScreen/              # Dashboard principal
-│   ├── LoginScreen/             # Tela de login
-│   └── CadastroScreen/          # Tela de cadastro
+│   ├── HomeScreen/              
+│   ├── LoginScreen/             
+│   └── CadastroScreen/        
 ├── 🧩 _components/
-│   ├── Profile/                 # Componentes de perfil
-│   └── icons/                   # Ícones SVG personalizados
+│   ├── Profile/               
+│   └── icons/                 
 ├── 🎣 hooks/
-│   ├── useProfile.ts            # 🔥 Hook principal consolidado
-│   ├── useHealthMetrics.ts      # ⚠️ Deprecated - usar useProfile
-│   ├── useDailyData.ts          # ⚠️ Deprecated - usar useProfile
-│   ├── useRecommendations.ts    # Recomendações IA
-│   ├── useProfileModal.ts       # Estado do modal de perfil
-│   ├── useAsyncStorageDebug.ts  # Debug do AsyncStorage
-│   └── useProfileDebug.ts       # Debug específico do perfil
+│   ├── useProfile.ts            
+│   ├── useHealthMetrics.ts      
+│   ├── useDailyData.ts         
+│   ├── useRecommendations.ts    
+│   ├── useProfileModal.ts       
+│   ├── useAsyncStorageDebug.ts  
+│   └── useProfileDebug.ts      
 └── 🔧 utils/
-    └── AsyncStorageUtils.ts     # Utilitários de persistência
+    └── AsyncStorageUtils.ts     
 ```
 
 ### 🔄 Fluxo de Dados
