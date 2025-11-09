@@ -8,6 +8,9 @@ import { StatusBar } from 'expo-status-bar';
 import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import CadastroScreen from './screens/CadastroScreen';
+import CadastroDadosPessoaisScreen from './screens/CadastroDadosPessoaisScreen';
+import CadastroCredenciaisScreen from './screens/CadastroCredenciaisScreen';
+import CadastroEnderecoScreen from './screens/CadastroEnderecoScreen';
 
 // Context
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -56,6 +59,18 @@ const AppNavigator = () => {
             <Stack.Screen 
               name="Cadastro" 
               component={CadastroScreen}
+            />
+            <Stack.Screen 
+              name="CadastroDadosPessoais" 
+              component={CadastroDadosPessoaisScreen}
+            />
+            <Stack.Screen 
+              name="CadastroCredenciais" 
+              component={CadastroCredenciaisScreen}
+            />
+            <Stack.Screen 
+              name="CadastroEndereco" 
+              component={CadastroEnderecoScreen}
             />
           </>
         )}
