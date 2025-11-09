@@ -22,6 +22,11 @@ interface CadastroScreenProps {
 }
 
 export default function CadastroScreen({ navigation }: CadastroScreenProps) {
+  // Redirecionar automaticamente para o novo fluxo de cadastro
+  React.useEffect(() => {
+    navigation?.replace('CadastroDadosPessoais');
+  }, [navigation]);
+
   const [formData, setFormData] = useState({
     nome: '',
     email: '',

@@ -21,7 +21,7 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMeLocal] = useState(false);
@@ -29,19 +29,20 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   // Usar o contexto de autenticação
   const { login, isLoading } = useAuth();
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  // Função para validar username (removida validação de email)
+  // const validateEmail = (email: string) => {
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //   return emailRegex.test(email);
+  // };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
+    if (!username.trim() || !password.trim()) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
     }
 
-    if (!validateEmail(email)) {
-      Alert.alert('Erro', 'Por favor, insira um email válido');
+    if (username.length < 3) {
+      Alert.alert('Erro', 'O username deve ter pelo menos 3 caracteres');
       return;
     }
 
@@ -51,7 +52,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     }
 
     try {
-      const success = await login(email, password);
+      const success = await login(username, password);
       
       if (success) {
         // Salvar preferência "Lembrar de mim"
@@ -61,7 +62,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         // baseado no estado de autenticação
         console.log('✅ Login realizado, navegando para Home...');
       } else {
-        Alert.alert('Erro', 'Email ou senha incorretos');
+        Alert.alert('Erro', 'Username ou senha incorretos');
       }
     } catch (error) {
       Alert.alert('Erro', 'Ocorreu um erro durante o login. Tente novamente.');
@@ -78,7 +79,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   };
 
   const handleSignUp = () => {
-    navigation?.navigate('Cadastro');
+    navigation?.navigate('CadastroDadosPessoais');
   };
 
   return (
@@ -98,21 +99,20 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeTitle}>Bem-vindo de volta!</Text>
             <Text style={styles.welcomeSubtitle}>
-              Entre na sua conta para continuar monitorando sua saúde
+              Digite seu username e senha para continuar monitorando sua saúde
             </Text>
           </View>
 
           {/* Form */}
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Username</Text>
               <TextInput
                 style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="seu.email@exemplo.com"
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Digite seu username"
                 placeholderTextColor="#999"
-                keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
