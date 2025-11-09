@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiLogin, apiRegisterUser } from '../services/api';
 
 // Tipos para TypeScript
 interface User {
@@ -8,25 +9,21 @@ interface User {
   email: string;
   telefone?: string;
   dataNascimento?: string;
+  roles?: string[]; // Roles do usuário retornadas pelo login
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   register: (userData: RegisterData) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuthState: () => Promise<void>;
 }
 
-interface RegisterData {
-  nome: string;
-  email: string;
-  telefone: string;
-  dataNascimento: string;
-  password: string;
-}
+// Pode ser o objeto completo do requestBody esperado pela API (/usuario)
+type RegisterData = any;
 
 // Chaves para AsyncStorage
 const STORAGE_KEYS = {
@@ -107,43 +104,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Função de login
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
-      // Simular chamada para API de login
-      // Substitua por sua lógica real de autenticação
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular validação de credenciais
-      if (email.includes('@') && password.length >= 6) {
-        // Dados simulados do usuário (viriam da API)
-        const userData: User = {
-          id: '12345',
-          nome: 'Usuário Teste',
-          email: email,
-          telefone: '(11) 99999-9999',
-          dataNascimento: '01/01/1990',
-        };
-        
-        // Token simulado (viria da API)
-        const token = `fake_token_${Date.now()}_${Math.random()}`;
-        
-        // Salvar dados no AsyncStorage
-        await saveUserData(userData, token);
-        
-        // Atualizar estado
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        console.log('✅ Login realizado com sucesso');
-        return true;
-      } else {
-        console.log('❌ Credenciais inválidas');
+
+      // Chamar API real
+      const data = await apiLogin(username, password);
+
+      // Resposta da API: { token: string, username: string, roles: string[] }
+      const { token, username: returnedUsername, roles } = data;
+
+      if (!token) {
+        console.error('❌ Login falhou: token não retornado', data);
         return false;
       }
+
+      // Criar objeto de usuário com os dados retornados
+      const userData: User = {
+        id: returnedUsername, // Usando username como ID
+        nome: returnedUsername,
+        email: '', // Email não é retornado no login, será preenchido depois se necessário
+        telefone: '',
+        dataNascimento: '',
+        roles: roles, // Salvar roles do usuário
+      };
+
+      // Salvar dados no AsyncStorage
+      await saveUserData(userData, token);
+
+      // Atualizar estado
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      console.log('✅ Login realizado com sucesso (API)');
+      return true;
     } catch (error) {
-      console.error('❌ Erro no login:', error);
+      console.error('❌ Erro no login (API):', error);
       return false;
     } finally {
       setIsLoading(false);
@@ -154,33 +150,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (userData: RegisterData): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
-      // Simular chamada para API de cadastro
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular criação de conta
-      const newUser: User = {
-        id: `user_${Date.now()}`,
-        nome: userData.nome,
-        email: userData.email,
-        telefone: userData.telefone,
-        dataNascimento: userData.dataNascimento,
-      };
-      
-      // Token simulado
-      const token = `fake_token_${Date.now()}_${Math.random()}`;
-      
-      // Salvar dados no AsyncStorage
-      await saveUserData(newUser, token);
-      
-      // Atualizar estado
-      setUser(newUser);
-      setIsAuthenticated(true);
-      
-      console.log('✅ Cadastro realizado com sucesso');
+
+      // Enviar para a API /usuario
+      const resp = await apiRegisterUser(userData);
+
+      // Esperamos algo como { token, user } ou { usuario }
+      const token = resp?.token || resp?.accessToken || null;
+      const createdUser = resp?.user || resp?.usuario || resp || null;
+
+      if (!token && !createdUser) {
+        console.error('❌ Cadastro falhou (API): resposta inesperada', resp);
+        return false;
+      }
+
+      // Se a API retornou token, salvamos
+      if (token) {
+        await saveUserData(createdUser, token);
+        setUser(createdUser || null);
+        setIsAuthenticated(true);
+      } else if (createdUser) {
+        // API pode não retornar token; salvamos os dados do usuário e continuar autenticado localmente
+        await saveUserData(createdUser, `token_${Date.now()}`);
+        setUser(createdUser as User);
+        setIsAuthenticated(true);
+      }
+
+      console.log('✅ Cadastro realizado com sucesso (API)');
       return true;
     } catch (error) {
-      console.error('❌ Erro no cadastro:', error);
+      console.error('❌ Erro no cadastro (API):', error);
       return false;
     } finally {
       setIsLoading(false);
