@@ -145,25 +145,51 @@ export default function CadastroEnderecoScreen({ navigation, route }: CadastroEn
       return;
     }
 
-    // Montar o objeto final conforme o requestBody
+    const formatCEPForAPI = (cep: string) => {
+      const numbers = cep.replace(/\D/g, '');
+      return numbers.length === 8 ? `${numbers.slice(0, 5)}-${numbers.slice(5)}` : cep;
+    };
+
+    const validateRequestData = () => {
+      if (!dadosPessoais.nome?.trim()) {
+        Alert.alert('Erro', 'Nome é obrigatório');
+        return false;
+      }
+      if (!dadosPessoais.email?.trim()) {
+        Alert.alert('Erro', 'Email é obrigatório');
+        return false;
+      }
+      if (!credenciais.username?.trim()) {
+        Alert.alert('Erro', 'Username é obrigatório');
+        return false;
+      }
+      if (!credenciais.password?.trim()) {
+        Alert.alert('Erro', 'Password é obrigatório');
+        return false;
+      }
+      return true;
+    };
+
+    if (!validateRequestData()) return;
+
     const requestBody = {
       nome: dadosPessoais.nome,
       sobrenome: dadosPessoais.sobrenome,
-      cpf: dadosPessoais.cpf.replace(/\D/g, ''), // Remove formatação
+      cpf: dadosPessoais.cpf.replace(/\D/g, ''),
       email: dadosPessoais.email,
       credenciais: {
         username: credenciais.username,
         password: credenciais.password,
       },
       telefone: dadosPessoais.telefone,
-      dataNascimento: convertDateToAPI(dadosPessoais.dataNascimento), // Converter para formato YYYY-MM-DD
-      sexo: dadosPessoais.sexo,
+      dataNascimento: convertDateToAPI(dadosPessoais.dataNascimento),
+      sexo: dadosPessoais.sexo === '' ? 'MASCULINO' : dadosPessoais.sexo,
       altura: parseFloat(dadosPessoais.altura),
       peso: parseFloat(dadosPessoais.peso),
       endereco: {
         logradouro: formData.logradouro,
         bairro: formData.bairro,
-        cep: formData.cep.replace(/\D/g, ''), // Remove formatação
+        cep: formatCEPForAPI(formData.cep),
         numero: formData.numero,
         complemento: formData.complemento,
         cidade: formData.cidade,
@@ -172,8 +198,12 @@ export default function CadastroEnderecoScreen({ navigation, route }: CadastroEn
     };
 
     try {
-      // Enviar para a API /usuario usando o requestBody completo
-      console.log('📋 Enviando dados completos do cadastro para API:', JSON.stringify(requestBody, null, 2));
+      console.log('📋 Enviando dados completos do cadastro para API:');
+      console.log('📝 Nome:', requestBody.nome);
+      console.log('📧 Email:', requestBody.email);
+      console.log('� Username:', requestBody.credenciais.username);
+      console.log('🏠 CEP:', requestBody.endereco.cep);
+      console.log('📋 Dados completos:', JSON.stringify(requestBody, null, 2));
 
       const success = await register(requestBody);
 
