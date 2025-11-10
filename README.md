@@ -8,6 +8,9 @@ Davi Praxedes Santos Silva - RM560719
 
 João dos Santos Cardoso de Jesus - RM560400
 
+## Link video apresentação
+https://youtube.com/shorts/wNFBLLNyFY4?feature=share
+
 ## 🎯 Sobre o Projeto
 
 ### 💡 Problema/Contexto
@@ -37,10 +40,13 @@ Atualmente, **não existe uma ferramenta acessível** que monitore continuamente
 - ✅ Resumo diário personalizado
 
 ### 🔐 Sistema de Autenticação
-- ✅ Login/Cadastro com validação completa
-- ✅ Persistência de sessão com AsyncStorage
-- ✅ Recuperação de senha
-- ✅ Dados de perfil sincronizados
+- ✅ **Login completo** com autenticação via API REST
+- ✅ **Cadastro em 3 etapas**: Dados pessoais → Credenciais → Endereço
+- ✅ **Validação robusta** de CPF, CEP e dados obrigatórios
+- ✅ **Persistência segura** de tokens JWT no AsyncStorage
+- ✅ **Migração automática** de dados antigos
+- ✅ **Tratamento de erros** personalizado com tipos específicos
+- ✅ **Redirecionamento inteligente** após cadastro para login
 
 ### 📈 Monitoramento de Saúde
 - ✅ **Batimentos Cardíacos**: Média, mínimo, máximo com alertas
@@ -56,16 +62,23 @@ Atualmente, **não existe uma ferramenta acessível** que monitore continuamente
 - ✅ Sistema de prioridades (alta, média, baixa)
 
 ### 👤 Perfil do Usuário
-- ✅ Informações pessoais completas
-- ✅ Estatísticas de saúde detalhadas
-- ✅ Histórico de atividades
-- ✅ Configurações personalizáveis
+- ✅ **Informações pessoais** completas com validação
+- ✅ **Edição de perfil** com modal interativo
+- ✅ **Integração com API** para busca e atualização de dados
+- ✅ **Validação de campos** (CPF, CEP, telefone)
+- ✅ **Formatação automática** de dados (CEP: XXXXX-XXX)
+- ✅ **Sistema de fallback** para dados offline
+- ✅ **Debug avançado** do perfil e autenticação
 
-### 🔧 Sistema de Debug
-- ✅ Inspeção completa do AsyncStorage
-- ✅ Exportação/importação de dados
-- ✅ Simulação de atualizações
-- ✅ Comparação de fontes de dados
+### 🔧 Sistema de Debug & Validação
+- ✅ **Inspeção completa** do AsyncStorage
+- ✅ **Validação de CPF** com algoritmo de dígitos verificadores
+- ✅ **Validação de CEP** com formatação automática (XXXXX-XXX)
+- ✅ **Busca automática** de endereço via API ViaCEP
+- ✅ **Tratamento de erros** com tipos específicos (CPF_INVALID, VALIDATION_ERROR)
+- ✅ **Logs estruturados** com emojis para debugging
+- ✅ **Migração automática** de dados antigos para nova estrutura
+- ✅ **Comparação de fontes** de dados (API vs AsyncStorage)
 
 ---
 
@@ -76,22 +89,32 @@ Atualmente, **não existe uma ferramenta acessível** que monitore continuamente
 - **TypeScript** ~5.9.2 - Tipagem estática
 - **Expo** ~54.0.12 - Plataforma de desenvolvimento
 - **React Navigation** v7 - Navegação entre telas
+- **Axios** - Cliente HTTP para integração com API
 
 ### Gerenciamento de Estado
 - **React Context API** - Estado global de autenticação
 - **Custom Hooks** - Lógica de negócio reutilizável
-- **AsyncStorage** - Persistência local de dados
+- **AsyncStorage** - Persistência local de tokens e dados do usuário
+- **JWT Authentication** - Tokens seguros para autenticação
+- **Error Handling** - Sistema robusto de tratamento de erros
 
 ### UI/UX
 - **React Native SVG** - Ícones vetoriais personalizados
 - **Bootstrap Icons** - Biblioteca de ícones minimalistas
 - **Design System** - Cores, tipografia e componentes consistentes
 
+### Backend & API
+- **API REST** - Endpoints para autenticação e gerenciamento de usuários
+- **Validação de dados** - CPF, CEP, email com algoritmos específicos
+- **Sistema de erros** - Códigos e mensagens padronizados
+- **Formatação automática** - CEP (XXXXX-XXX), telefone, CPF
+
 ### Arquitetura
 - **Hooks Architecture** - Separação de lógica e UI
 - **Context Pattern** - Gerenciamento de estado global
 - **Component-Based** - Componentes reutilizáveis
 - **TypeScript First** - Desenvolvimento type-safe
+- **Error-First Design** - Tratamento robusto de erros e validações
 
 ---
 
@@ -101,24 +124,32 @@ Atualmente, **não existe uma ferramenta acessível** que monitore continuamente
 src/
 ├── 📱 App.tsx                    
 ├── 🔐 contexts/
-│   └── AuthContext.tsx          
+│   └── AuthContext.tsx          # Context completo com JWT e migração
 ├── 📺 screens/
 │   ├── HomeScreen/              
-│   ├── LoginScreen/             
-│   └── CadastroScreen/        
+│   ├── LoginScreen/             # Login com API REST
+│   ├── CadastroScreen/          # Cadastro em etapas
+│   ├── CadastroDadosPessoaisScreen/
+│   ├── CadastroCredenciaisScreen/
+│   └── CadastroEnderecoScreen/  # Validação de CEP via ViaCEP
 ├── 🧩 _components/
-│   ├── Profile/               
-│   └── icons/                 
+│   ├── Profile/                 # Modal de perfil e edição
+│   └── icons/                   # Ícones customizados
 ├── 🎣 hooks/
-│   ├── useProfile.ts            
+│   ├── useUserProfile.ts        # Integração com API de usuários
 │   ├── useHealthMetrics.ts      
 │   ├── useDailyData.ts         
 │   ├── useRecommendations.ts    
-│   ├── useProfileModal.ts       
-│   ├── useAsyncStorageDebug.ts  
-│   └── useProfileDebug.ts      
-└── 🔧 utils/
-    └── AsyncStorageUtils.ts     
+│   └── useProfileModal.ts       
+├── 🌐 services/
+│   └── api.ts                   # Cliente HTTP com endpoints
+├── 🔧 utils/
+│   ├── AsyncStorageUtils.ts     
+│   ├── cpfUtils.ts             # Validação e formatação de CPF
+│   ├── formatUtils.ts          # Formatação de CEP e telefone
+│   └── errorUtils.ts           # Sistema de tratamento de erros
+└── � types/
+    └── cadastro.ts             # Tipos TypeScript para cadastro
 ```
 
 ### 🔄 Fluxo de Dados
@@ -126,14 +157,21 @@ src/
 ```mermaid
 graph TB
     A[📱 App.tsx] --> B[🔐 AuthContext]
-    B --> C{Usuário Autenticado?}
+    B --> C{Token JWT Válido?}
     C -->|Sim| D[🏠 HomeScreen]
     C -->|Não| E[🔐 LoginScreen]
-    D --> F[🎣 useProfile Hook]
-    F --> G[💾 AsyncStorage]
-    F --> H[📊 Métricas de Saúde]
-    F --> I[🤖 Recomendações IA]
-    D --> J[👤 Profile Modal]
+    E --> F[📝 Cadastro 3 Etapas]
+    F --> G[✅ Validação CPF/CEP]
+    G --> H[🌐 API REST]
+    H --> I[🔄 Redirect Login]
+    D --> J[🎣 useUserProfile Hook]
+    J --> K[🌐 API GET /usuarios/username]
+    J --> L[💾 AsyncStorage + JWT]
+    J --> M[📊 Métricas de Saúde]
+    J --> N[🤖 Recomendações IA]
+    D --> O[👤 Profile Modal]
+    O --> P[✏️ Edit Profile]
+    P --> Q[🌐 API PUT /usuarios]
 ```
 
 ---
@@ -183,17 +221,6 @@ npx expo start
 
 ## 📈 Dados de Demonstração
 
-### 👤 Usuário de Teste
-```javascript
-{
-  "nome": "Maria Silva",
-  "email": "maria@exemplo.com",
-  "telefone": "(11) 99999-9999", 
-  "dataNascimento": "15/03/1990",
-  "idade": 34
-}
-```
-
 ### 📊 Métricas Simuladas
 - **Batimentos**: 72 bpm (normal)
 - **Estresse**: 3.2/10 (atenção)
@@ -229,32 +256,46 @@ npx tsc --noEmit      # Verificação TypeScript
 
 ## 🏆 Funcionalidades Avançadas
 
-### 🎣 Sistema de Hooks Consolidado
+### 🎣 Sistema de Hooks & API Integration
 
-O projeto utiliza uma arquitetura moderna baseada em **Custom Hooks**:
+O projeto utiliza uma arquitetura moderna baseada em **Custom Hooks** integrados com **API REST**:
 
-#### `useProfile()` - Hook Principal ⭐
+#### `useUserProfile()` - Hook Principal ⭐
 ```typescript
 const {
-  // Dados do perfil
-  profileData,
-  healthStats,
-  
-  // Métricas de saúde (ex-useHealthMetrics)
-  metrics,
-  getStatusColor,
-  getStatusText,
-  
-  // Dados diários (ex-useDailyData)
-  dailySummary,
-  sensorStatus,
-  addExercise,
-  addWater,
-  
-  // Estados
+  // Dados do usuário da API
+  user,
   isLoading,
   error,
-} = useProfile();
+  
+  // Operações CRUD
+  refreshProfile,      // GET /usuarios/username/{username}
+  updateProfile,       // PUT /usuarios
+  
+  // Utilidades
+  getUserDataForUpdate,
+  isUpdating,
+} = useUserProfile();
+```
+
+#### Sistema de Validação
+```typescript
+// Validação de CPF
+validateCPF("47169146827") // true/false
+formatCPF("47169146827")   // "471.691.468-27"
+
+// Formatação de CEP
+formatCEP("02314070")      // "02314-070"
+validateCEP("02314-070")   // true/false
+
+// Tratamento de erros
+try {
+  await apiUpdateUser(userData, token);
+} catch (error) {
+  if (error.type === ErrorType.CPF_INVALID) {
+    // Tratar erro específico de CPF
+  }
+}
 ```
 
 #### Hooks Especializados
@@ -263,12 +304,18 @@ const {
 - `useAsyncStorageDebug()` - Debug completo do storage
 - `useProfileDebug()` - Debug específico do perfil
 
-### 🔄 Sincronização de Dados
+### 🔄 Sincronização & Autenticação
 
-- **AsyncStorage** para persistência local
-- **Sincronização automática** a cada 30s
-- **Validação de token** para segurança
-- **Fallbacks** para dados offline
+- **JWT Tokens** para autenticação segura
+- **API REST** com endpoints padronizados:
+  - `POST /api/auth/login` - Autenticação
+  - `POST /usuarios` - Cadastro de usuário
+  - `GET /usuarios/username/{username}` - Buscar perfil
+  - `PUT /usuarios` - Atualizar perfil
+- **AsyncStorage** para persistência de tokens e dados
+- **Validação automática** de tokens e refresh
+- **Migração de dados** entre versões da estrutura
+- **Fallbacks inteligentes** para cenários offline
 
 ### 🎨 Design System
 
@@ -291,18 +338,24 @@ critical: '#F44336'   // Vermelho
 
 ### 🚀 Próximas Funcionalidades
 - [ ] **Integração com Wearables** (Apple Watch, Fitbit)
-- [ ] **Machine Learning** avançado para predição
-- [ ] **Notificações Push** inteligentes
-- [ ] **Relatórios PDF** exportáveis
-- [ ] **Compartilhamento** com médicos
-- [ ] **Gamificação** e conquistas
+- [ ] **Machine Learning** avançado para predição de estresse
+- [ ] **Notificações Push** baseadas em padrões de saúde
+- [ ] **Relatórios médicos** em PDF exportáveis
+- [ ] **Compartilhamento seguro** com profissionais de saúde
+- [ ] **Gamificação** com metas e conquistas de bem-estar
+- [ ] **Integração com planos de saúde**
+- [ ] **Telemedicina** integrada
 
 ### 🔧 Melhorias Técnicas
 - [ ] **Testes Unitários** (Jest + Testing Library)
+- [ ] **Testes de Integração** para APIs
 - [ ] **CI/CD Pipeline** (GitHub Actions)
-- [ ] **Sentry** para monitoramento de erros
-- [ ] **Backend API** com Node.js
-- [ ] **Banco de Dados** (PostgreSQL)
+- [ ] **Sentry** para monitoramento de erros em produção
+- [ ] **Banco de Dados** (PostgreSQL) para backend
+- [ ] **Cache Redis** para performance
+- [ ] **Rate Limiting** e segurança de API
+- [ ] **Documentação Swagger** para APIs
+- [ ] **Logs estruturados** (Winston/Pino)
 - [ ] **Analytics** (Firebase/Amplitude)
 
 ### 🌍 Expansão
@@ -314,26 +367,87 @@ critical: '#F44336'   // Vermelho
 
 ---
 
+## 🌐 API Endpoints
+
+### 🔐 Autenticação
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "username": "kauesamartino",
+  "password": "senha123"
+}
+
+Response: {
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "username": "kauesamartino", 
+  "roles": ["USER"]
+}
+```
+
+# Buscar perfil do usuário
+GET /usuarios/username/{username}
+Authorization: Bearer {token}
+
+# Atualizar dados do usuário  
+PUT /usuarios
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+### 🛡️ Validações Implementadas
+
+- **CPF**: Algoritmo de dígitos verificadores
+- **CEP**: Formato XXXXX-XXX obrigatório
+- **Email**: Validação de formato padrão
+- **Telefone**: Formatação (XX) XXXXX-XXXX
+- **Campos obrigatórios**: Nome, email, username, password
+
+---
+
 ## 🧪 Testes e Debug
 
 ### 🔍 Debug Tools Integrados
 
-O app inclui ferramentas de debug avançadas:
+O app inclui ferramentas de debug avançadas para desenvolvimento:
 
 ```typescript
-// Debug do AsyncStorage
-const { storedData, clearAllData, exportData } = useAsyncStorageDebug();
+// Debug completo de autenticação
+await debugAuthStorage();
 
-// Debug do Profile
-const { debugData, simulateDataUpdate, compareData } = useProfileDebug();
+// Correção automática de username
+await fixUsername();
+
+// Logout forçado para limpeza
+await forceLogout();
+
+// Validações integradas
+const isValidCPF = validateCPF("47169146827");
+const formattedCEP = formatCEP("02314070");
+
+// Tratamento de erros específicos
+catch (error) {
+  if (error instanceof AppError) {
+    switch(error.type) {
+      case ErrorType.CPF_INVALID:
+      case ErrorType.VALIDATION_ERROR:
+      case ErrorType.NETWORK_ERROR:
+    }
+  }
+}
 ```
 
-### 📊 Monitoramento
+### 📊 Monitoramento & Logs
 
-- **Console Logs** estruturados com emojis
-- **Comparação de dados** entre fontes
-- **Simulação** de atualizações
-- **Exportação** de dados para análise
+- **Console Logs estruturados** com emojis para categorização
+- **Tracking completo** do fluxo de autenticação
+- **Validação em tempo real** de dados críticos (CPF, CEP)
+- **Detecção automática** de problemas de migração
+- **Logs de API** com request/response detalhados
+- **Debug de tokens** JWT com verificação de validade
+- **Comparação de dados** entre diferentes fontes
+- **Exportação de dados** para análise e troubleshooting
 
 ---
 
