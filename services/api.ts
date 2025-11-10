@@ -1,5 +1,9 @@
 // Cliente HTTP com axios para comunicação com a API local
 import axios from 'axios';
+import { AppError, mapApiError, ErrorType } from '../utils/errorUtils';
+import { validateCPF } from '../utils/cpfUtils';
+import { formatCEP, validateCEP } from '../utils/formatUtils';
+import { User } from '../contexts/AuthContext';
 
 const BASE_URL = 'https://neocare-api.onrender.com';
 
@@ -90,27 +94,41 @@ export async function apiLogin(username: string, password: string): Promise<Logi
     const response = await api.post('/api/auth/login', { username, password });
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.message || error.message || 'Erro no login';
-    throw new Error(`Login failed: ${message}`);
+    const appError = mapApiError(error);
+    throw appError;
   }
 }
 
-export async function apiGetUserByUsername(username: string, token: string): Promise<UserProfileResponse> {
+export async function apiGetUserByUsername(username: string, token: string): Promise<User> {
   try {
     const response = await api.get(`/usuarios/username/${username}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.message || error.message || 'Erro ao buscar dados do usuário';
-    throw new Error(`Get user failed: ${message}`);
+    const appError = mapApiError(error);
+    throw appError;
   }
 }
 
 export async function apiUpdateUser(userData: UpdateUserRequest, token: string): Promise<UserProfileResponse> {
   try {
+    // Validar CPF se fornecido
+    if (userData.cpf && !validateCPF(userData.cpf)) {
+      throw new AppError('CPF inválido', ErrorType.CPF_INVALID);
+    }
+
+    // Validar e formatar CEP se fornecido
+    if (userData.endereco?.cep) {
+      if (!validateCEP(userData.endereco.cep)) {
+        throw new AppError('CEP inválido', ErrorType.VALIDATION_ERROR);
+      }
+      // Formatar CEP no padrão XXXXX-XXX
+      userData.endereco.cep = formatCEP(userData.endereco.cep);
+    }
+
     const response = await api.put('/usuarios', userData, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -118,18 +136,42 @@ export async function apiUpdateUser(userData: UpdateUserRequest, token: string):
     });
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.message || error.message || 'Erro ao atualizar dados do usuário';
-    throw new Error(`Update user failed: ${message}`);
+    // Se já é um AppError (como erro de validação), propaga
+    if (error instanceof AppError) {
+      throw error;
+    }
+    
+    // Caso contrário, mapeia o erro da API
+    const appError = mapApiError(error);
+    throw appError;
   }
 }
 
 export async function apiRegisterUser(body: any): Promise<any> {
   try {
-    const response = await api.post('/usuario', body);
+    // Validar e formatar dados antes de enviar
+    if (body.cpf && !validateCPF(body.cpf)) {
+      throw new AppError('CPF inválido', ErrorType.CPF_INVALID);
+    }
+
+    if (body.endereco?.cep) {
+      if (!validateCEP(body.endereco.cep)) {
+        throw new AppError('CEP inválido', ErrorType.VALIDATION_ERROR);
+      }
+      // Formatar CEP no padrão XXXXX-XXX
+      body.endereco.cep = formatCEP(body.endereco.cep);
+    }
+
+    const response = await api.post('/usuarios', body);
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.message || error.message || 'Erro no cadastro';
-    throw new Error(`Register failed: ${message}`);
+    // Se já é um AppError (como erro de validação), propaga
+    if (error instanceof AppError) {
+      throw error;
+    }
+    
+    const appError = mapApiError(error);
+    throw appError;
   }
 }
 

@@ -180,12 +180,13 @@ export default function CadastroEnderecoScreen({ navigation, route }: CadastroEn
       if (success) {
         Alert.alert(
           'Sucesso! 🎉',
-          'Sua conta foi criada com sucesso! Bem-vindo ao NeoCare.',
+          'Sua conta foi criada com sucesso! Agora faça login para acessar o NeoCare.',
           [
             {
-              text: 'Começar',
+              text: 'Fazer Login',
               onPress: () => {
-                console.log('✅ Cadastro completo realizado, navegando para Home...');
+                console.log('✅ Cadastro completo realizado, redirecionando para Login...');
+                navigation?.navigate('Login');
               }
             }
           ]
