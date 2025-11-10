@@ -15,11 +15,13 @@ import { useHealthMetrics } from '../../hooks/useHealthMetrics';
 import { useRecommendations } from '../../hooks/useRecommendations';
 import { useProfileModal } from '../../hooks/useProfileModal';
 import { useDailyData } from '../../hooks/useDailyData';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { profileData } = useUserProfile();
   
   const { 
     metrics: healthMetrics, 
@@ -78,7 +80,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View>
-              <Text style={styles.greeting}>Bom dia, {user?.nome?.split(' ')[0] || 'Usuário'}!</Text>
+              <Text style={styles.greeting}>Bom dia, {profileData.firstName}!</Text>
               <Text style={styles.subtitle}>Como você está se sentindo hoje?</Text>
             </View>
             <ProfileCompact onPress={() => openProfileModal()} />

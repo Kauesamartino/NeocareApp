@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
   ScrollView,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 const { width } = Dimensions.get('window');
 
@@ -61,18 +63,26 @@ export const ProfileAvatar: React.FC<{ name: string; size?: number }> = ({
 };
 
 export const ProfileCompact: React.FC<{ onPress: () => void }> = ({ onPress }) => {
-  const { user } = useAuth();
+  const { profileData } = useUserProfile();
 
   return (
     <TouchableOpacity style={styles.compactProfile} onPress={onPress}>
-      <ProfileAvatar name={user?.nome || 'Usuário'} size={36} />
+      <ProfileAvatar name={profileData.fullName} size={36} />
     </TouchableOpacity>
   );
 };
 
 export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
   const { user, logout } = useAuth();
+  const { profileData, refreshProfile, isLoading, getFullName } = useUserProfile();
   const [activeTab, setActiveTab] = useState<'info' | 'health' | 'settings'>('info');
+
+  // Buscar dados do perfil quando o modal abrir
+  useEffect(() => {
+    if (visible && user && !profileData.isComplete) {
+      refreshProfile();
+    }
+  }, [visible]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -112,13 +122,26 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
         return (
           <View style={styles.tabContent}>
             <View style={styles.profileHeader}>
-              <ProfileAvatar name={user?.nome || 'Usuário'} size={80} />
+              <ProfileAvatar name={profileData.fullName} size={80} />
               <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{user?.nome || 'Nome não informado'}</Text>
-                <Text style={styles.profileEmail}>{user?.email || 'Email não informado'}</Text>
-                <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-                  <Text style={styles.editButtonText}>Editar perfil</Text>
-                </TouchableOpacity>
+                <Text style={styles.profileName}>{profileData.fullName}</Text>
+                <Text style={styles.profileEmail}>{profileData.email}</Text>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+                    <Text style={styles.editButtonText}>Editar perfil</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.refreshButton, isLoading && styles.refreshButtonDisabled]} 
+                    onPress={refreshProfile}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#2196F3" />
+                    ) : (
+                      <Text style={styles.refreshButtonText}>🔄</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
@@ -126,18 +149,38 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
               <Text style={styles.sectionTitle}>Informações Pessoais</Text>
               
               <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Nome Completo</Text>
+                <Text style={styles.infoValue}>{profileData.fullName}</Text>
+              </View>
+              
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoValue}>{profileData.email}</Text>
+              </View>
+              
+              <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Telefone</Text>
-                <Text style={styles.infoValue}>{user?.telefone || 'Não informado'}</Text>
+                <Text style={styles.infoValue}>{profileData.telefone}</Text>
+              </View>
+              
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Sexo</Text>
+                <Text style={styles.infoValue}>{profileData.sexo}</Text>
+              </View>
+              
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Altura</Text>
+                <Text style={styles.infoValue}>{profileData.altura}</Text>
+              </View>
+              
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Peso</Text>
+                <Text style={styles.infoValue}>{profileData.peso}</Text>
               </View>
               
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Data de Nascimento</Text>
-                <Text style={styles.infoValue}>{user?.dataNascimento || 'Não informado'}</Text>
-              </View>
-              
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>ID do Usuário</Text>
-                <Text style={styles.infoValue}>{user?.id || 'N/A'}</Text>
+                <Text style={styles.infoValue}>{profileData.dataNascimento}</Text>
               </View>
             </View>
 
@@ -390,17 +433,35 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 10,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   editButton: {
     backgroundColor: '#2196F3',
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    alignSelf: 'flex-start',
   },
   editButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  refreshButton: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  refreshButtonDisabled: {
+    opacity: 0.6,
+  },
+  refreshButtonText: {
+    fontSize: 14,
   },
 
   // Section styles

@@ -42,6 +42,28 @@ type LoginResponse = {
   roles: string[];
 };
 
+type UserProfileResponse = {
+  nome: string;
+  sobrenome: string;
+  cpf: string;
+  email: string;
+  telefone: string;
+  dataNascimento: string;
+  sexo: 'MASCULINO' | 'FEMININO' | 'OUTRO';
+  altura: number;
+  peso: number;
+  endereco: {
+    logradouro: string;
+    bairro: string;
+    cep: string;
+    numero: string;
+    complemento: string;
+    cidade: string;
+    uf: string;
+  };
+  ativo: boolean;
+};
+
 export async function apiLogin(username: string, password: string): Promise<LoginResponse> {
   try {
     const response = await api.post('/api/auth/login', { username, password });
@@ -49,6 +71,20 @@ export async function apiLogin(username: string, password: string): Promise<Logi
   } catch (error: any) {
     const message = error.response?.data?.message || error.message || 'Erro no login';
     throw new Error(`Login failed: ${message}`);
+  }
+}
+
+export async function apiGetUserByUsername(username: string, token: string): Promise<UserProfileResponse> {
+  try {
+    const response = await api.get(`/usuarios/username/${username}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || 'Erro ao buscar dados do usuário';
+    throw new Error(`Get user failed: ${message}`);
   }
 }
 
@@ -62,7 +98,11 @@ export async function apiRegisterUser(body: any): Promise<any> {
   }
 }
 
+// Exportar tipos também
+export type { LoginResponse, UserProfileResponse };
+
 export default {
   apiLogin,
   apiRegisterUser,
+  apiGetUserByUsername,
 };
