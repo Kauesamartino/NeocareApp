@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiLogin, apiRegisterUser, apiGetUserByUsername } from '../services/api';
+import { apiLogin, apiRegisterUser, apiGetUserByUsername, apiUpdateUser, UpdateUserRequest } from '../services/api';
 
 // Tipos para TypeScript
 interface User {
   id: string;
+  username: string; // Username usado para login e buscar dados na API
   nome: string;
   sobrenome?: string;
   email: string;
@@ -36,6 +37,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   checkAuthState: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  updateUserProfile: (userData: UpdateUserRequest) => Promise<boolean>;
 }
 
 // Pode ser o objeto completo do requestBody esperado pela API (/usuario)
@@ -45,6 +47,7 @@ type RegisterData = any;
 const STORAGE_KEYS = {
   USER_TOKEN: '@neocare_user_token',
   USER_DATA: '@neocare_user_data',
+  USERNAME: '@neocare_username',
   REMEMBER_ME: '@neocare_remember_me',
 };
 
@@ -62,7 +65,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
       await AsyncStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
+      await AsyncStorage.setItem(STORAGE_KEYS.USERNAME, userData.username);
       console.log('✅ Dados do usuário salvos no AsyncStorage');
+      console.log('🔑 Username salvo:', userData.username);
     } catch (error) {
       console.error('❌ Erro ao salvar dados do usuário:', error);
     }
@@ -90,6 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.USER_DATA,
         STORAGE_KEYS.USER_TOKEN,
+        STORAGE_KEYS.USERNAME,
         STORAGE_KEYS.REMEMBER_ME,
       ]);
       console.log('✅ Dados do usuário removidos do AsyncStorage');
@@ -138,7 +144,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Criar objeto de usuário com os dados retornados
       const userData: User = {
         id: returnedUsername || username, // Usar o username retornado pela API ou o inserido pelo usuário
-        nome: returnedUsername || username,
+        username: returnedUsername || username, // Este é o username para login e API
+        nome: returnedUsername || username, // Nome temporário, será substituído quando buscar dados completos
         email: '', // Email não é retornado no login, será preenchido depois se necessário
         telefone: '',
         dataNascimento: '',
@@ -153,7 +160,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsAuthenticated(true);
 
       console.log('✅ Login realizado com sucesso (API)');
-      console.log('📱 Token e username salvos:', { token: token.substring(0, 20) + '...', username: userData.nome });
+      console.log('📱 Token e username salvos:', { token: token.substring(0, 20) + '...', username: userData.username });
       return true;
     } catch (error) {
       console.error('❌ Erro no login (API):', error);
@@ -245,10 +252,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const isTokenValid = await validateToken(token);
         
         if (isTokenValid) {
+          // Migrar usuários antigos que não têm username ou têm username incorreto
+          if (savedUser && (!savedUser.username || savedUser.username === savedUser.nome)) {
+            console.log('🔄 Migrando usuário - corrigindo username');
+            console.log('🔍 Antes:', { id: savedUser.id, username: savedUser.username, nome: savedUser.nome });
+            
+            if (savedUser.id) {
+              savedUser.username = savedUser.id; // ID é o username correto
+              await saveUserData(savedUser, token); // Resalvar com username correto
+              console.log('✅ Username corrigido de', savedUser.nome, 'para', savedUser.id);
+            }
+          }
+          
           // Token válido, usuário autenticado
           setUser(savedUser);
           setIsAuthenticated(true);
           console.log('✅ Usuário autenticado automaticamente');
+          console.log('🔍 Debug - Dados do usuário carregados:', { 
+            id: savedUser?.id, 
+            username: savedUser?.username, 
+            nome: savedUser?.nome 
+          });
         } else {
           // Token inválido, limpar dados
           await clearUserData();
@@ -267,8 +291,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Função para buscar dados completos do perfil do usuário
   const refreshUserProfile = async (): Promise<void> => {
     try {
-      if (!user?.nome || !user?.id) {
+      console.log('🔍 Debug refreshUserProfile - Verificando usuário:', { 
+        hasUser: !!user, 
+        username: user?.username, 
+        id: user?.id,
+        nome: user?.nome 
+      });
+      
+      if (!user?.username || !user?.id) {
         console.log('⚠️ Não é possível buscar perfil: usuário não autenticado');
+        console.log('🔍 Motivo:', { 
+          hasUsername: !!user?.username, 
+          hasId: !!user?.id,
+          user: user
+        });
         return;
       }
 
@@ -282,12 +318,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setIsLoading(true);
       
-      // Buscar dados completos do usuário na API
-      const userProfile = await apiGetUserByUsername(user.nome, token);
+      // Buscar dados completos do usuário na API usando o USERNAME
+      const userProfile = await apiGetUserByUsername(user.username, token);
       
       // Atualizar dados do usuário mantendo as informações de autenticação
       const updatedUser: User = {
         id: user.id,
+        username: user.username, // Manter username original
         nome: userProfile.nome,
         sobrenome: userProfile.sobrenome,
         email: userProfile.email,
@@ -316,9 +353,122 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Função para atualizar dados do perfil do usuário
+  const updateUserProfile = async (userData: UpdateUserRequest): Promise<boolean> => {
+    try {
+      console.log('🔍 Debug updateUserProfile - Verificando usuário:', { 
+        hasUser: !!user, 
+        username: user?.username, 
+        id: user?.id,
+        nome: user?.nome 
+      });
+      
+      if (!user?.username || !user?.id) {
+        console.log('⚠️ Não é possível atualizar perfil: usuário não autenticado');
+        console.log('🔍 Motivo:', { 
+          hasUsername: !!user?.username, 
+          hasId: !!user?.id,
+          user: user
+        });
+        return false;
+      }
+
+      // Carregar token do AsyncStorage
+      const { token } = await loadUserData();
+      
+      if (!token) {
+        console.log('⚠️ Token não encontrado, não é possível atualizar perfil');
+        return false;
+      }
+
+      setIsLoading(true);
+      
+      // Atualizar dados do usuário na API
+      const updatedProfile = await apiUpdateUser(userData, token);
+      
+      // Atualizar dados do usuário mantendo as informações de autenticação
+      const updatedUser: User = {
+        id: user.id,
+        username: user.username, // Manter username original
+        nome: updatedProfile.nome,
+        sobrenome: updatedProfile.sobrenome,
+        email: updatedProfile.email,
+        telefone: updatedProfile.telefone,
+        dataNascimento: updatedProfile.dataNascimento,
+        sexo: updatedProfile.sexo,
+        altura: updatedProfile.altura,
+        peso: updatedProfile.peso,
+        cpf: updatedProfile.cpf,
+        endereco: updatedProfile.endereco,
+        ativo: updatedProfile.ativo,
+        roles: user.roles, // Manter roles originais
+      };
+
+      // Salvar dados atualizados
+      await saveUserData(updatedUser, token);
+      
+      // Atualizar estado
+      setUser(updatedUser);
+      
+      console.log('✅ Perfil do usuário atualizado com sucesso');
+      console.log('📱 Dados atualizados salvos:', { 
+        id: updatedUser.id,
+        username: updatedUser.username,
+        nome: updatedUser.nome, 
+        sobrenome: updatedUser.sobrenome,
+        email: updatedUser.email 
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao atualizar dados do perfil:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Função para migrar dados antigos de usuários
+  const migrateOldUserData = async () => {
+    try {
+      console.log('🔄 Verificando necessidade de migração...');
+      await debugAuthStorage(); // Debug antes da migração
+      
+      const { user: savedUser, token } = await loadUserData();
+      
+      if (savedUser && !savedUser.username) {
+        console.log('🔄 Detectado usuário sem username, iniciando migração...');
+        
+        // Usar o ID como username (que é o username real do login)
+        if (savedUser.id) {
+          savedUser.username = savedUser.id; // ID é o username correto
+          await saveUserData(savedUser, token || '');
+          console.log('✅ Usuário migrado com username:', savedUser.username);
+          console.log('🔍 Migração: id =', savedUser.id, '→ username =', savedUser.username);
+          
+          // Debug após migração
+          console.log('📋 Verificando dados após migração:');
+          await debugAuthStorage();
+        } else {
+          // Se não tem id, limpar dados (usuário inválido)
+          console.log('⚠️ Usuário sem ID, limpando dados...');
+          await clearUserData();
+        }
+      } else {
+        console.log('✅ Usuário já possui username, migração desnecessária');
+      }
+    } catch (error) {
+      console.error('❌ Erro na migração de dados:', error);
+    }
+  };
+
   // Verificar estado de autenticação ao inicializar
   useEffect(() => {
-    checkAuthState();
+    const initializeAuth = async () => {
+      await migrateOldUserData();
+      await checkAuthState();
+    };
+    initializeAuth();
   }, []);
 
   const value: AuthContextType = {
@@ -330,6 +480,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logout,
     checkAuthState,
     refreshUserProfile,
+    updateUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -364,6 +515,53 @@ export const getRememberMe = async (): Promise<boolean> => {
   }
 };
 
+// Função para forçar logout e limpar todos os dados (emergência)
+export const forceLogout = async (): Promise<void> => {
+  try {
+    console.log('🚨 Executando logout forçado...');
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.USER_DATA,
+      STORAGE_KEYS.USER_TOKEN,
+      STORAGE_KEYS.USERNAME,
+      STORAGE_KEYS.REMEMBER_ME,
+    ]);
+    console.log('✅ Todos os dados de autenticação foram limpos');
+    console.log('🔄 Por favor, faça login novamente');
+  } catch (error) {
+    console.error('❌ Erro no logout forçado:', error);
+  }
+};
+
+// Função para corrigir username manualmente
+export const fixUsername = async (): Promise<void> => {
+  try {
+    console.log('🔧 Tentando corrigir username...');
+    
+    const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
+    const token = await AsyncStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+    
+    if (userData) {
+      const user = JSON.parse(userData);
+      console.log('👤 Usuário atual:', { id: user.id, username: user.username, nome: user.nome });
+      
+      if (user.id && user.username !== user.id) {
+        console.log('🔄 Corrigindo username de', user.username, 'para', user.id);
+        user.username = user.id;
+        
+        await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+        await AsyncStorage.setItem(STORAGE_KEYS.USERNAME, user.username);
+        
+        console.log('✅ Username corrigido com sucesso!');
+        console.log('🔄 Recarregue o app para aplicar as mudanças');
+      } else {
+        console.log('✅ Username já está correto');
+      }
+    }
+  } catch (error) {
+    console.error('❌ Erro ao corrigir username:', error);
+  }
+};
+
 // Função de debug para verificar dados salvos no AsyncStorage
 export const debugAuthStorage = async (): Promise<void> => {
   try {
@@ -371,11 +569,26 @@ export const debugAuthStorage = async (): Promise<void> => {
     
     const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
     const token = await AsyncStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+    const username = await AsyncStorage.getItem(STORAGE_KEYS.USERNAME);
     const rememberMe = await AsyncStorage.getItem(STORAGE_KEYS.REMEMBER_ME);
     
-    console.log('📱 Dados do usuário:', userData ? JSON.parse(userData) : 'Não encontrado');
+    const parsedUser = userData ? JSON.parse(userData) : null;
+    
+    console.log('📱 Dados do usuário:', parsedUser);
+    if (parsedUser) {
+      console.log('   - ID:', parsedUser.id);
+      console.log('   - Username:', parsedUser.username);
+      console.log('   - Nome:', parsedUser.nome);
+      console.log('   - Email:', parsedUser.email);
+    }
     console.log('🔑 Token salvo:', token ? token.substring(0, 30) + '...' : 'Não encontrado');
+    console.log('👤 Username separado:', username || 'Não encontrado');
     console.log('💾 Lembrar de mim:', rememberMe ? JSON.parse(rememberMe) : 'Não definido');
+    
+    // Verificar se usuário precisa de migração
+    if (parsedUser && !parsedUser.username) {
+      console.log('⚠️ ATENÇÃO: Usuário sem username detectado - precisa migração!');
+    }
     
     console.log('=== Fim do Debug de Autenticação ===\n');
   } catch (error) {

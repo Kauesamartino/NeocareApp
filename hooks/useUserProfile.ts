@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { UpdateUserRequest } from '../services/api';
 
 export interface UserProfileData {
   fullName: string;
@@ -14,8 +15,9 @@ export interface UserProfileData {
 }
 
 export const useUserProfile = () => {
-  const { user, refreshUserProfile, isLoading } = useAuth();
+  const { user, refreshUserProfile, updateUserProfile, isLoading } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Função para formatar nome completo
   const getFullName = (user: any): string => {
@@ -72,7 +74,7 @@ export const useUserProfile = () => {
     isComplete: isProfileComplete(user),
   };
 
-  // Função para atualizar perfil
+  // Função para atualizar perfil (refresh dos dados)
   const handleRefreshProfile = async (): Promise<boolean> => {
     try {
       setIsRefreshing(true);
@@ -86,6 +88,46 @@ export const useUserProfile = () => {
     }
   };
 
+  // Função para salvar alterações no perfil
+  const handleUpdateProfile = async (userData: UpdateUserRequest): Promise<boolean> => {
+    try {
+      setIsUpdating(true);
+      const success = await updateUserProfile(userData);
+      return success;
+    } catch (error) {
+      console.error('Erro ao salvar perfil:', error);
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Função para converter User para UpdateUserRequest
+  const getUserDataForUpdate = (): UpdateUserRequest | null => {
+    if (!user) return null;
+
+    return {
+      nome: user.nome || '',
+      sobrenome: user.sobrenome || '',
+      cpf: user.cpf || '',
+      telefone: user.telefone || '',
+      email: user.email || '',
+      dataNascimento: user.dataNascimento || '',
+      sexo: user.sexo || 'MASCULINO',
+      altura: user.altura || 0,
+      peso: user.peso || 0,
+      endereco: user.endereco || {
+        logradouro: '',
+        bairro: '',
+        cep: '',
+        numero: '',
+        complemento: '',
+        cidade: '',
+        uf: '',
+      },
+    };
+  };
+
   // Buscar dados do perfil automaticamente quando o usuário estiver disponível
   useEffect(() => {
     if (user && !isProfileComplete(user)) {
@@ -96,9 +138,12 @@ export const useUserProfile = () => {
   return {
     profileData,
     user,
-    isLoading: isLoading || isRefreshing,
+    isLoading: isLoading || isRefreshing || isUpdating,
     isRefreshing,
+    isUpdating,
     refreshProfile: handleRefreshProfile,
+    updateProfile: handleUpdateProfile,
+    getUserDataForUpdate,
     getFullName,
     formatSexo,
     formatDate,

@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const STORAGE_KEYS = {
   USER_TOKEN: '@neocare_user_token',
   USER_DATA: '@neocare_user_data',
+  USERNAME: '@neocare_username',
   REMEMBER_ME: '@neocare_remember_me',
   USER_PREFERENCES: '@neocare_user_preferences',
   HEALTH_DATA: '@neocare_health_data',
@@ -177,6 +178,7 @@ export class AuthStorage {
       await StorageUtils.removeItems([
         STORAGE_KEYS.USER_DATA,
         STORAGE_KEYS.USER_TOKEN,
+        STORAGE_KEYS.USERNAME,
       ]);
       console.log('🗑️ Sessão do usuário removida');
     } catch (error) {

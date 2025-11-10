@@ -64,6 +64,27 @@ type UserProfileResponse = {
   ativo: boolean;
 };
 
+type UpdateUserRequest = {
+  nome: string;
+  sobrenome: string;
+  cpf: string;
+  telefone: string;
+  email: string;
+  dataNascimento: string;
+  sexo: 'MASCULINO' | 'FEMININO' | 'OUTRO';
+  altura: number;
+  peso: number;
+  endereco: {
+    logradouro: string;
+    bairro: string;
+    cep: string;
+    numero: string;
+    complemento: string;
+    cidade: string;
+    uf: string;
+  };
+};
+
 export async function apiLogin(username: string, password: string): Promise<LoginResponse> {
   try {
     const response = await api.post('/api/auth/login', { username, password });
@@ -88,6 +109,20 @@ export async function apiGetUserByUsername(username: string, token: string): Pro
   }
 }
 
+export async function apiUpdateUser(userData: UpdateUserRequest, token: string): Promise<UserProfileResponse> {
+  try {
+    const response = await api.put('/usuarios', userData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || 'Erro ao atualizar dados do usuário';
+    throw new Error(`Update user failed: ${message}`);
+  }
+}
+
 export async function apiRegisterUser(body: any): Promise<any> {
   try {
     const response = await api.post('/usuario', body);
@@ -99,10 +134,11 @@ export async function apiRegisterUser(body: any): Promise<any> {
 }
 
 // Exportar tipos também
-export type { LoginResponse, UserProfileResponse };
+export type { LoginResponse, UserProfileResponse, UpdateUserRequest };
 
 export default {
   apiLogin,
   apiRegisterUser,
   apiGetUserByUsername,
+  apiUpdateUser,
 };

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { EditProfileModal } from './EditProfileModal';
 
 const { width } = Dimensions.get('window');
 
@@ -76,6 +77,7 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
   const { user, logout } = useAuth();
   const { profileData, refreshProfile, isLoading, getFullName } = useUserProfile();
   const [activeTab, setActiveTab] = useState<'info' | 'health' | 'settings'>('info');
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
   // Buscar dados do perfil quando o modal abrir
   useEffect(() => {
@@ -103,11 +105,16 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
   };
 
   const handleEditProfile = () => {
-    Alert.alert(
-      'Editar Perfil',
-      'Funcionalidade em desenvolvimento. Em breve você poderá editar suas informações.',
-      [{ text: 'OK' }]
-    );
+    setIsEditModalVisible(true);
+  };
+
+  const handleEditModalClose = () => {
+    setIsEditModalVisible(false);
+  };
+
+  const handleEditModalSave = () => {
+    // Refresh dos dados após salvar
+    refreshProfile();
   };
 
   const profileStats = [
@@ -317,9 +324,19 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
           {renderTabContent()}
         </ScrollView>
       </View>
+
+      {/* Modal de Edição */}
+      <EditProfileModal
+        visible={isEditModalVisible}
+        onClose={handleEditModalClose}
+        onSave={handleEditModalSave}
+      />
     </Modal>
   );
 };
+
+// Exportar também o EditProfileModal
+export { EditProfileModal };
 
 const styles = StyleSheet.create({
   // Avatar styles
