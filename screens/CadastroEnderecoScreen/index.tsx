@@ -13,31 +13,15 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { DadosPessoais } from '../../types/cadastro';
+import { DadosPessoais, Credenciais, Endereco } from '../../types/cadastro';
+import { buscarCEP } from '../../services/cepService';
+import { AppNavigationProp, AppRouteProp } from '../../types/navigation';
 
 const { width } = Dimensions.get('window');
 
 interface CadastroEnderecoProps {
-  navigation?: any;
-  route?: {
-    params: {
-      dadosPessoais: DadosPessoais;
-      credenciais: {
-        username: string;
-        password: string;
-      };
-    };
-  };
-}
-
-export interface Endereco {
-  logradouro: string;
-  bairro: string;
-  cep: string;
-  numero: string;
-  complemento: string;
-  cidade: string;
-  uf: string;
+  navigation?: AppNavigationProp<'CadastroEndereco'>;
+  route?: AppRouteProp<'CadastroEndereco'>;
 }
 
 export default function CadastroEnderecoScreen({ navigation, route }: CadastroEnderecoProps) {
@@ -71,22 +55,12 @@ export default function CadastroEnderecoScreen({ navigation, route }: CadastroEn
   };
 
   // Função para buscar CEP via API
-  const buscarCEP = async (cep: string) => {
+  const handleBuscarCEP = async (cep: string) => {
     if (!validateCEP(cep)) return;
 
-    const cepNumbers = cep.replace(/\D/g, '');
     setLoadingCEP(true);
-
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`);
-      const data = await response.json();
-
-      if (data.erro) {
-        Alert.alert('Erro', 'CEP não encontrado');
-        return;
-      }
-
-      // Preencher automaticamente os campos
+      const data = await buscarCEP(cep);
       setFormData(prev => ({
         ...prev,
         logradouro: data.logradouro || prev.logradouro,
@@ -94,8 +68,8 @@ export default function CadastroEnderecoScreen({ navigation, route }: CadastroEn
         cidade: data.localidade || prev.cidade,
         uf: data.uf || prev.uf,
       }));
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível buscar o CEP');
+    } catch {
+      Alert.alert('Erro', 'CEP não encontrado ou serviço indisponível');
     } finally {
       setLoadingCEP(false);
     }
@@ -297,7 +271,7 @@ export default function CadastroEnderecoScreen({ navigation, route }: CadastroEn
                       const formatted = formatCEP(value);
                       updateField('cep', formatted);
                       if (formatted.length === 9) {
-                        buscarCEP(formatted);
+                        handleBuscarCEP(formatted);
                       }
                     }}
                     placeholder="00000-000"

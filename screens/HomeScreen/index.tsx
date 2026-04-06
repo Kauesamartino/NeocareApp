@@ -88,6 +88,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Status do Sensor */}
+        {sensorStatus && (
         <View style={styles.sensorStatus}>
           <View style={styles.sensorIndicator}>
             <View style={[styles.statusDot, { backgroundColor: sensorStatus.isConnected ? '#4CAF50' : '#F44336' }]} />
@@ -100,6 +101,7 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.lastSync}>Última sincronização: {sensorStatus.lastSync}</Text>
         </View>
+        )}
 
         {/* Métricas de Saúde */}
         <View style={styles.section}>

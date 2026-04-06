@@ -13,11 +13,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { DadosPessoais } from '../../types/cadastro';
+import { AppNavigationProp } from '../../types/navigation';
+import { formatPhone, formatDate } from '../../utils/formatUtils';
+import { validateCPF, formatCPF } from '../../utils/cpfUtils';
 
 const { width } = Dimensions.get('window');
 
 interface CadastroDadosPessoaisProps {
-  navigation?: any;
+  navigation?: AppNavigationProp<'CadastroDadosPessoais'>;
 }
 
 export default function CadastroDadosPessoaisScreen({ navigation }: CadastroDadosPessoaisProps) {
@@ -42,33 +45,9 @@ export default function CadastroDadosPessoaisScreen({ navigation }: CadastroDado
     return emailRegex.test(email);
   };
 
-  const validateCPF = (cpf: string) => {
-    const numbers = cpf.replace(/\D/g, '');
-    return numbers.length === 11;
-  };
-
   const validatePhone = (phone: string) => {
     const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
     return phoneRegex.test(phone) || phone.length >= 10;
-  };
-
-  const formatCPF = (cpf: string) => {
-    const numbers = cpf.replace(/\D/g, '');
-    return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  };
-
-  const formatPhone = (phone: string) => {
-    const numbers = phone.replace(/\D/g, '');
-    if (numbers.length <= 10) {
-      return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    } else {
-      return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-  };
-
-  const formatDate = (date: string) => {
-    const numbers = date.replace(/\D/g, '');
-    return numbers.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
   };
 
   const validateForm = () => {

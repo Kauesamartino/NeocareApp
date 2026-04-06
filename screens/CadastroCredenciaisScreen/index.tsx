@@ -14,16 +14,13 @@ import {
 } from 'react-native';
 import { BootstrapEye } from '../../_components/icons/BootstrapEye';
 import { DadosPessoais, Credenciais } from '../../types/cadastro';
+import { AppNavigationProp, AppRouteProp } from '../../types/navigation';
 
 const { width } = Dimensions.get('window');
 
 interface CadastroCredenciaisProps {
-  navigation?: any;
-  route?: {
-    params: {
-      dadosPessoais: DadosPessoais;
-    };
-  };
+  navigation?: AppNavigationProp<'CadastroCredenciais'>;
+  route?: AppRouteProp<'CadastroCredenciais'>;
 }
 
 export default function CadastroCredenciaisScreen({ navigation, route }: CadastroCredenciaisProps) {
@@ -114,7 +111,7 @@ export default function CadastroCredenciaisScreen({ navigation, route }: Cadastr
 
     // Navegar para a próxima tela passando todos os dados
     navigation?.navigate('CadastroEndereco', {
-      dadosPessoais,
+      dadosPessoais: dadosPessoais!,
       credenciais: {
         username: formData.username,
         password: formData.password,

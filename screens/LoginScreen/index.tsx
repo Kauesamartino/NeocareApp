@@ -13,11 +13,12 @@ import {
 } from 'react-native';
 import { useAuth, setRememberMe } from '../../contexts/AuthContext';
 import { BootstrapEye } from '../../_components/icons/BootstrapEye';
+import { AppNavigationProp } from '../../types/navigation';
 
 const { width, height } = Dimensions.get('window');
 
 interface LoginScreenProps {
-  navigation?: any;
+  navigation?: AppNavigationProp<'Login'>;
 }
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
