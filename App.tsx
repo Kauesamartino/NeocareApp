@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Screens
 import HomeScreen from './screens/HomeScreen';
@@ -12,18 +13,28 @@ import CadastroDadosPessoaisScreen from './screens/CadastroDadosPessoaisScreen';
 import CadastroCredenciaisScreen from './screens/CadastroCredenciaisScreen';
 import CadastroEnderecoScreen from './screens/CadastroEnderecoScreen';
 
-// Context
+// Contexts
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { RootStackParamList } from './types/navigation';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 2, staleTime: 1000 * 60 },
+  },
+});
 
 // Componente de Loading
-const LoadingScreen = () => (
-  <View style={styles.loadingContainer}>
-    <ActivityIndicator size="large" color="#2196F3" />
-    <Text style={styles.loadingText}>Carregando...</Text>
-  </View>
-);
+const LoadingScreen = () => {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Carregando...</Text>
+    </View>
+  );
+};
 
 // Navegador principal
 const AppNavigator = () => {
@@ -79,13 +90,17 @@ const AppNavigator = () => {
   );
 };
 
-// App principal com Provider
+// App principal com Providers
 export default function App() {
   return (
-    <AuthProvider>
-      <AppNavigator />
-      <StatusBar style="auto" />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppNavigator />
+          <StatusBar style="auto" />
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
