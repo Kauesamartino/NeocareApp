@@ -1,137 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  getDailySummary,
+  addWaterEntry,
+  addExerciseEntry,
+  addMeditationEntry,
+  DailySummary,
+  SensorStatus,
+} from '../services/apexService';
 
-interface DailySummary {
-  sleep: string;
-  meditation: string;
-  exercises: number;
-  water: number;
-  steps: number;
-}
+export type { DailySummary, SensorStatus };
 
-interface SensorStatus {
-  isConnected: boolean;
-  lastSync: string;
-  batteryLevel?: number;
-}
+const QUERY_KEY = (username: string) => ['dailySummary', username];
 
 export const useDailyData = () => {
-  const [dailySummary, setDailySummary] = useState<DailySummary>({
-    sleep: '7h 30m',
-    meditation: '15 min',
-    exercises: 3,
-    water: 6,
-    steps: 6234,
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const username = user?.username ?? '';
+
+  const query = useQuery({
+    queryKey: QUERY_KEY(username),
+    queryFn: () => getDailySummary(username),
+    enabled: !!username,
+    staleTime: 1000 * 60 * 2,
   });
 
-  const [sensorStatus, setSensorStatus] = useState<SensorStatus>({
-    isConnected: true,
-    lastSync: 'há 2 min',
-    batteryLevel: 85,
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY(username) });
+
+  const addWaterMutation = useMutation({
+    mutationFn: () => addWaterEntry(username),
+    onSuccess: invalidate,
   });
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const addExerciseMutation = useMutation({
+    mutationFn: () => addExerciseEntry(username),
+    onSuccess: invalidate,
+  });
 
-  // Simular atualização de dados do sensor
-  const refreshSensorData = async () => {
-    setIsRefreshing(true);
-    
-    setTimeout(() => {
-      // Simular variação nos dados
-      setDailySummary(prev => ({
-        ...prev,
-        steps: prev.steps + Math.floor(Math.random() * 100),
-        water: Math.min(prev.water + (Math.random() > 0.5 ? 1 : 0), 8),
-      }));
+  const addMeditationMutation = useMutation({
+    mutationFn: (minutes: number) => addMeditationEntry(username, minutes),
+    onSuccess: invalidate,
+  });
 
-      setSensorStatus(prev => ({
-        ...prev,
-        lastSync: 'agora mesmo',
-        batteryLevel: Math.max((prev.batteryLevel || 85) - 1, 20),
-      }));
+  const summary = query.data?.summary;
+  const sensorStatus = query.data?.sensorStatus;
 
-      setIsRefreshing(false);
-    }, 2000);
-  };
-
-  // Atualizar progresso de exercício
-  const addExercise = () => {
-    setDailySummary(prev => ({
-      ...prev,
-      exercises: prev.exercises + 1,
-    }));
-  };
-
-  // Adicionar tempo de meditação
-  const addMeditation = (minutes: number) => {
-    const currentMinutes = parseInt(dailySummary.meditation.replace(' min', ''));
-    const newTotal = currentMinutes + minutes;
-    setDailySummary(prev => ({
-      ...prev,
-      meditation: `${newTotal} min`,
-    }));
-  };
-
-  // Registrar copo de água
-  const addWater = () => {
-    setDailySummary(prev => ({
-      ...prev,
-      water: Math.min(prev.water + 1, 10),
-    }));
-  };
-
-  // Calcular progresso geral do dia
   const getDailyProgress = () => {
-    const sleepHours = parseFloat(dailySummary.sleep.replace('h', ''));
-    const meditationMinutes = parseInt(dailySummary.meditation.replace(' min', ''));
-    const exerciseGoal = 5;
-    const waterGoal = 8;
-    const stepsGoal = 8000;
+    if (!summary) {
+      return { overall: 0, sleep: 0, meditation: 0, exercise: 0, water: 0, steps: 0 };
+    }
+    const sleepHours = parseFloat(summary.sleep.replace('h', '')) || 0;
+    const meditationMinutes = parseInt(summary.meditation.replace(' min', '')) || 0;
 
-    const sleepProgress = Math.min((sleepHours / 8) * 100, 100);
+    const sleepProgress     = Math.min((sleepHours / 8) * 100, 100);
     const meditationProgress = Math.min((meditationMinutes / 30) * 100, 100);
-    const exerciseProgress = Math.min((dailySummary.exercises / exerciseGoal) * 100, 100);
-    const waterProgress = Math.min((dailySummary.water / waterGoal) * 100, 100);
-    const stepsProgress = Math.min((dailySummary.steps / stepsGoal) * 100, 100);
+    const exerciseProgress  = Math.min((summary.exercises / 5) * 100, 100);
+    const waterProgress     = Math.min((summary.water / 8) * 100, 100);
+    const stepsProgress     = Math.min((summary.steps / 8000) * 100, 100);
 
-    const overallProgress = (
-      sleepProgress + 
-      meditationProgress + 
-      exerciseProgress + 
-      waterProgress + 
-      stepsProgress
-    ) / 5;
+    const overall = (sleepProgress + meditationProgress + exerciseProgress + waterProgress + stepsProgress) / 5;
 
     return {
-      overall: Math.round(overallProgress),
-      sleep: Math.round(sleepProgress),
+      overall:    Math.round(overall),
+      sleep:      Math.round(sleepProgress),
       meditation: Math.round(meditationProgress),
-      exercise: Math.round(exerciseProgress),
-      water: Math.round(waterProgress),
-      steps: Math.round(stepsProgress),
+      exercise:   Math.round(exerciseProgress),
+      water:      Math.round(waterProgress),
+      steps:      Math.round(stepsProgress),
     };
   };
 
-  // Auto-refresh a cada 5 minutos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Simular pequenas atualizações automáticas
-      setSensorStatus(prev => ({
-        ...prev,
-        lastSync: `há ${Math.floor(Math.random() * 10) + 1} min`,
-      }));
-    }, 300000); // 5 minutos
-
-    return () => clearInterval(interval);
-  }, []);
-
   return {
-    dailySummary,
-    sensorStatus,
-    isRefreshing,
-    refreshSensorData,
-    addExercise,
-    addMeditation,
-    addWater,
+    dailySummary: summary ?? null,
+    sensorStatus: sensorStatus ?? null,
+    isRefreshing: query.isFetching,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refreshSensorData: query.refetch,
+    addWater: () => addWaterMutation.mutate(),
+    addExercise: () => addExerciseMutation.mutate(),
+    addMeditation: (minutes: number) => addMeditationMutation.mutate(minutes),
     progress: getDailyProgress(),
   };
 };
