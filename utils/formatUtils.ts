@@ -80,3 +80,14 @@ export function unformatTelefone(telefone: string): string {
   if (!telefone) return '';
   return telefone.replace(/\D/g, '');
 }
+
+/** Alias para compatibilidade */
+export const formatPhone = formatTelefone;
+
+/**
+ * Formata data durante digitação (DD/MM/AAAA)
+ */
+export function formatDate(date: string): string {
+  const numbers = date.replace(/\D/g, '');
+  return numbers.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+}
