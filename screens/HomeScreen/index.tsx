@@ -10,17 +10,20 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { ProfileCompact, ProfileModal } from '../../_components/Profile';
 import { useHealthMetrics } from '../../hooks/useHealthMetrics';
 import { useRecommendations } from '../../hooks/useRecommendations';
 import { useProfileModal } from '../../hooks/useProfileModal';
 import { useDailyData } from '../../hooks/useDailyData';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { AppNavigationProp } from '../../types/navigation';
 
 const { width } = Dimensions.get('window');
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }: { navigation: AppNavigationProp<'Home'> }) {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { profileData } = useUserProfile();
   
   const { 
@@ -171,6 +174,27 @@ export default function HomeScreen() {
                 <Text style={styles.summaryLabel}>Exercícios</Text>
               </View>
             </View>
+          </View>
+        </View>
+
+        {/* Ações Rápidas */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ações Rápidas</Text>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate('Medicao')}>
+              <Text style={styles.actionCardIcon}>📊</Text>
+              <Text style={styles.actionCardTitle}>Nova Medição</Text>
+              <Text style={styles.actionCardSub}>Registrar dados do sensor</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: '#6c757d' }]}
+              onPress={() => navigation.navigate('Perfil')}>
+              <Text style={styles.actionCardIcon}>👤</Text>
+              <Text style={styles.actionCardTitle}>Meu Perfil</Text>
+              <Text style={styles.actionCardSub}>Ver e editar dados</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -387,6 +411,32 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 14,
     color: '#666',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+  },
+  actionCardIcon: {
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  actionCardTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  actionCardSub: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 11,
+    textAlign: 'center',
   },
 });
 

@@ -12,6 +12,8 @@ export type RootStackParamList = {
     credenciais: Credenciais;
   };
   Home: undefined;
+  Perfil: undefined;
+  Medicao: undefined;
 };
 
 export type AppNavigationProp<T extends keyof RootStackParamList> =

@@ -175,6 +175,70 @@ export async function apiRegisterUser(body: any): Promise<any> {
   }
 }
 
+// ─── Tipos de medição ──────────────────────────────────────────
+
+export type MedicaoEstresseInput = {
+  idUsuario: number;
+  idDispositivo: number;
+  tipoMedicao: 'MEDICAO_ESTRESSE';
+  variacaoFrequenciaCardiaca: number;
+  condutividadePele: number;
+};
+
+export type MedicaoVitalInput = {
+  idUsuario: number;
+  idDispositivo: number;
+  tipoMedicao: 'MEDICAO_VITAL';
+  batimentosPorMinuto: number;
+  oxigenacaoSangue: number;
+  pressaoSistolica: number;
+  pressaoDiastolica: number;
+};
+
+export type MedicaoOutput = {
+  id: number;
+  nomeUsuario: string;
+  dataMedicao: string;
+  tipoMedicao: string;
+  dispositivo: { id: number; tipoDispositivo: string; enderecoDisp: string; ativo: boolean };
+};
+
+export type MedicaoEstresseOutput = {
+  variacaoFrequenciaCardiaca: number;
+  condutividadePele: number;
+  medicaoOutDto: MedicaoOutput;
+};
+
+export type MedicaoVitalOutput = {
+  batimentosPorMinuto: number;
+  oxigenacaoSangue: number;
+  pressaoSistolica: number;
+  pressaoDiastolica: number;
+  medicaoOutDto: MedicaoOutput;
+};
+
+export async function apiPostMedicaoEstresse(
+  data: MedicaoEstresseInput,
+): Promise<MedicaoEstresseOutput> {
+  try {
+    const response = await api.post('/medicoes/medicao_estresse', data);
+    return response.data;
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
+export async function apiPostMedicaoVital(
+  data: MedicaoVitalInput,
+): Promise<MedicaoVitalOutput> {
+  try {
+    const response = await api.post('/medicoes/medicao_vital', data);
+    return response.data;
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
 // Exportar tipos também
 export type { LoginResponse, UserProfileResponse, UpdateUserRequest };
 
@@ -183,4 +247,6 @@ export default {
   apiRegisterUser,
   apiGetUserByUsername,
   apiUpdateUser,
+  apiPostMedicaoEstresse,
+  apiPostMedicaoVital,
 };
