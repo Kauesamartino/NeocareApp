@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { UpdateUserRequest } from '../../services/api';
+import { formatPhone, toPhoneAPI } from '../../utils/formatUtils';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -87,6 +88,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
       const dataToSend = {
         ...formData,
         dataNascimento: formatDateForAPI(formData.dataNascimento),
+        telefone: toPhoneAPI(formData.telefone),
       };
       
       const success = await updateProfile(dataToSend);
@@ -119,14 +121,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
     return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
 
-  const formatPhone = (phone: string) => {
-    const numbers = phone.replace(/\D/g, '');
-    if (numbers.length <= 10) {
-      return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    } else {
-      return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-  };
 
   const formatDateForDisplay = (date: string) => {
     const numbers = date.replace(/\D/g, '');
@@ -245,9 +239,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                 style={styles.input}
                 value={formData.telefone}
                 onChangeText={(value) => updateField('telefone', formatPhone(value))}
-                placeholder="(11) 99999-9999"
+                placeholder="+55 (11) 99999-9999"
                 keyboardType="phone-pad"
-                maxLength={15}
+                maxLength={19}
               />
             </View>
 

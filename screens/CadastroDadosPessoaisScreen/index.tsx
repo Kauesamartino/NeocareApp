@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { DadosPessoais } from '../../types/cadastro';
 import { AppNavigationProp } from '../../types/navigation';
-import { formatPhone, formatDate } from '../../utils/formatUtils';
+import { formatPhone, formatDate, unformatTelefone } from '../../utils/formatUtils';
 import { validateCPF, formatCPF } from '../../utils/cpfUtils';
 
 const { width } = Dimensions.get('window');
@@ -46,8 +46,8 @@ export default function CadastroDadosPessoaisScreen({ navigation }: CadastroDado
   };
 
   const validatePhone = (phone: string) => {
-    const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
-    return phoneRegex.test(phone) || phone.length >= 10;
+    const digits = unformatTelefone(phone);
+    return digits.length >= 10 && digits.length <= 11;
   };
 
   const validateForm = () => {
@@ -197,10 +197,10 @@ export default function CadastroDadosPessoaisScreen({ navigation }: CadastroDado
                   style={styles.input}
                   value={formData.telefone}
                   onChangeText={(value) => updateField('telefone', formatPhone(value))}
-                  placeholder="(11) 99999-9999"
+                  placeholder="+55 (11) 99999-9999"
                   placeholderTextColor="#999"
                   keyboardType="phone-pad"
-                  maxLength={15}
+                  maxLength={19}
                 />
               </View>
 

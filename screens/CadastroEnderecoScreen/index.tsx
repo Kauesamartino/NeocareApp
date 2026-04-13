@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { DadosPessoais, Credenciais, Endereco } from '../../types/cadastro';
 import { buscarCEP } from '../../services/cepService';
+import { toPhoneAPI } from '../../utils/formatUtils';
 import { AppNavigationProp, AppRouteProp } from '../../types/navigation';
 
 const { width } = Dimensions.get('window');
@@ -155,7 +156,7 @@ export default function CadastroEnderecoScreen({ navigation, route }: CadastroEn
         username: credenciais.username,
         password: credenciais.password,
       },
-      telefone: dadosPessoais.telefone,
+      telefone: toPhoneAPI(dadosPessoais.telefone),
       dataNascimento: convertDateToAPI(dadosPessoais.dataNascimento),
       sexo: dadosPessoais.sexo === '' ? 'MASCULINO' : dadosPessoais.sexo,
       altura: parseFloat(dadosPessoais.altura),

@@ -48,37 +48,61 @@ export function validateCEP(cep: string): boolean {
 }
 
 /**
- * Formata telefone no padrão (XX) XXXXX-XXXX
+ * Formata telefone no padrão +55 (XX) XXXXX-XXXX para exibição
  * @param telefone - Telefone com ou sem formatação
- * @returns Telefone formatado
+ * @returns Telefone formatado para exibição
  */
 export function formatTelefone(telefone: string): string {
   if (!telefone) return '';
-  
-  // Remove todos os caracteres não numéricos
-  const cleanTelefone = telefone.replace(/\D/g, '');
-  
-  // Se não tem 10 ou 11 dígitos, retorna como está
-  if (cleanTelefone.length < 10 || cleanTelefone.length > 11) {
-    return telefone;
+
+  // Remove tudo que não é dígito
+  let digits = telefone.replace(/\D/g, '');
+
+  // Se começa com 55 e tem 12-13 dígitos, já inclui código do país
+  if (digits.startsWith('55') && digits.length >= 12) {
+    digits = digits.slice(2);
   }
-  
-  // Formata no padrão (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
-  if (cleanTelefone.length === 11) {
-    return `(${cleanTelefone.slice(0, 2)}) ${cleanTelefone.slice(2, 7)}-${cleanTelefone.slice(7)}`;
-  } else {
-    return `(${cleanTelefone.slice(0, 2)}) ${cleanTelefone.slice(2, 6)}-${cleanTelefone.slice(6)}`;
+
+  // Limita a 11 dígitos (DDD + celular)
+  digits = digits.slice(0, 11);
+
+  // Aplica formatação progressiva: +55 (XX) XXXXX-XXXX
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `+55 (${digits}`;
+  if (digits.length <= 7) return `+55 (${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 11) {
+    const split = digits.length === 11 ? 7 : 6;
+    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, split)}-${digits.slice(split)}`;
   }
+  return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
 /**
- * Remove formatação do telefone (deixa apenas números)
+ * Converte telefone de qualquer formato para +55XXXXXXXXXXX (envio à API)
+ * @param telefone - Telefone em qualquer formato
+ * @returns Telefone no formato +55XXXXXXXXXXX
+ */
+export function toPhoneAPI(telefone: string): string {
+  if (!telefone) return '';
+  let digits = telefone.replace(/\D/g, '');
+  if (digits.startsWith('55') && digits.length >= 12) {
+    return `+${digits}`;
+  }
+  return `+55${digits}`;
+}
+
+/**
+ * Remove formatação do telefone (deixa apenas números locais sem código do país)
  * @param telefone - Telefone formatado
- * @returns Telefone apenas com números
+ * @returns Telefone apenas com números (DDD + número)
  */
 export function unformatTelefone(telefone: string): string {
   if (!telefone) return '';
-  return telefone.replace(/\D/g, '');
+  let digits = telefone.replace(/\D/g, '');
+  if (digits.startsWith('55') && digits.length >= 12) {
+    return digits.slice(2);
+  }
+  return digits;
 }
 
 /** Alias para compatibilidade */
