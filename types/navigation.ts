@@ -14,6 +14,8 @@ export type RootStackParamList = {
   Home: undefined;
   Perfil: undefined;
   Medicao: undefined;
+  Notificacoes: undefined;
+  SobreApp: undefined;
 };
 
 export type AppNavigationProp<T extends keyof RootStackParamList> =

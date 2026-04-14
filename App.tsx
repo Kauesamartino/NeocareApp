@@ -14,6 +14,8 @@ import CadastroCredenciaisScreen from './screens/CadastroCredenciaisScreen';
 import CadastroEnderecoScreen from './screens/CadastroEnderecoScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import MedicaoScreen from './screens/MedicaoScreen';
+import NotificacoesScreen from './screens/NotificacoesScreen';
+import SobreAppScreen from './screens/SobreAppScreen';
 
 // Contexts
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -62,6 +64,8 @@ const AppNavigator = () => {
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Perfil" component={ProfileScreen} />
             <Stack.Screen name="Medicao" component={MedicaoScreen} />
+            <Stack.Screen name="Notificacoes" component={NotificacoesScreen} />
+            <Stack.Screen name="SobreApp" component={SobreAppScreen} />
           </>
         ) : (
           // Usuário não autenticado - mostrar telas de auth

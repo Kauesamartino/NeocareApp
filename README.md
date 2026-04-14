@@ -10,7 +10,7 @@ João dos Santos Cardoso de Jesus — RM560400
 
 ## Link vídeo apresentação
 
-https://youtube.com/shorts/wNFBLLNyFY4?feature=share
+https://youtu.be/m2Vd2BtW98U
 
 ---
 
@@ -26,7 +26,7 @@ O estresse é um dos principais problemas de saúde do mundo moderno. Muitas pes
 
 ---
 
-## 📱 Telas do App (8 rotas distintas)
+## 📱 Telas do App (10 rotas distintas)
 
 O app usa `@react-navigation/native-stack` com navegação condicional baseada no estado de autenticação.
 
@@ -36,7 +36,7 @@ O app usa `@react-navigation/native-stack` com navegação condicional baseada n
 |---|------|------|-----------|
 | 1 | **Login** | `Login` | Username + senha, autenticação via API REST com JWT |
 | 2 | **Cadastro (Intro)** | `Cadastro` | Visão geral das 3 etapas de registro |
-| 3 | **Dados Pessoais** | `CadastroDadosPessoais` | Nome, CPF (validação algorítmica), email, telefone, data de nascimento, sexo, altura, peso |
+| 3 | **Dados Pessoais** | `CadastroDadosPessoais` | Nome, CPF (formatação progressiva), email, telefone, data de nascimento, sexo, altura, peso |
 | 4 | **Credenciais** | `CadastroCredenciais` | Username, senha com indicador de força (Fraca/Média/Forte), confirmação |
 | 5 | **Endereço** | `CadastroEndereco` | CEP com autopreenchimento via ViaCEP, endereço completo, resumo final e envio |
 
@@ -44,9 +44,11 @@ O app usa `@react-navigation/native-stack` com navegação condicional baseada n
 
 | # | Tela | Rota | Descrição |
 |---|------|------|-----------|
-| 6 | **Home (Dashboard)** | `Home` | Métricas de saúde (APEX), recomendações, resumo diário, ações rápidas |
+| 6 | **Home (Dashboard)** | `Home` | Métricas reais da API Java + recomendações APEX e ações rápidas |
 | 7 | **Perfil** | `Perfil` | Visualização e edição dos dados pessoais + endereço via API |
 | 8 | **Medição** | `Medicao` | Registro de sinais vitais (BPM, SpO₂, PA) ou estresse (HRV, GSR) |
+| 9 | **Notificações** | `Notificacoes` | Lista de alertas reais por usuário com severidade e data/hora |
+| 10 | **Sobre o App** | `SobreApp` | Conteúdo institucional da plataforma e jornada de monitoramento |
 
 ---
 
@@ -61,11 +63,11 @@ O app usa `@react-navigation/native-stack` com navegação condicional baseada n
 
 ### 🏠 Dashboard (HomeScreen)
 - Saudação personalizada com nome do usuário (API backend)
-- Grid de métricas de saúde: BPM, estresse, sono, passos (dados via Oracle APEX)
-- Recomendações personalizadas com prioridade e ação de conclusão (Oracle APEX)
-- Resumo diário: sono, meditação, exercícios (Oracle APEX)
+- Grid de métricas de saúde reais: BPM, oxigenação, pressão e HRV (API Java)
+- Recomendações personalizadas com prioridade e ação de conclusão (Oracle APEX - mock permitido)
+- Resumo de saúde com total de medições vitais, medições de estresse e alertas ativos
 - Pull-to-refresh para atualizar dados
-- Botões de ação rápida: "Nova Medição" e "Meu Perfil"
+- Botões de ação rápida: "Nova Medição", "Meu Perfil", "Notificações" e "Sobre o App"
 
 ### 📈 Medições (MedicaoScreen)
 - **Aba Sinais Vitais**: BPM, SpO₂ (%), pressão sistólica/diastólica → `POST /medicoes/medicao_vital`
@@ -75,6 +77,16 @@ O app usa `@react-navigation/native-stack` com navegação condicional baseada n
 - ActivityIndicator durante submissão
 - Alerta de sucesso com resumo dos dados registrados
 - Usa `useMutation` do TanStack Query com `invalidateQueries` após sucesso
+- Fallback automático de dispositivo: se não houver ativo, usa ID aleatório entre 1 e 3
+
+### 🔔 Notificações
+- Tela dedicada para alertas reais (`Notificacoes`)
+- Consome endpoint de alertas por usuário da API Java
+- Exibe severidade, valor detectado, mensagem e data da notificação
+
+### ℹ️ Sobre o App
+- Tela institucional dedicada (`SobreApp`)
+- Apresenta missão, funcionamento da plataforma e visão de privacidade
 
 ### 👤 Perfil (ProfileScreen)
 - Exibe dados do usuário (pessoais + endereço) via `GET /usuarios/username/{username}`
@@ -85,10 +97,10 @@ O app usa `@react-navigation/native-stack` com navegação condicional baseada n
 - Modal de perfil com 3 abas: Info, Saúde, Configurações
 
 ### ✅ Validações
-- **CPF**: algoritmo completo de dígitos verificadores (11 dígitos)
+- **CPF**: aceito para testes com 11 dígitos + formatação progressiva (`000.000.000-00`)
 - **CEP**: 8 dígitos + busca automática via ViaCEP (`https://viacep.com.br/ws/{cep}/json/`)
 - **Email**: regex de formato
-- **Telefone**: 10–15 dígitos com formatação `(XX) XXXXX-XXXX`
+- **Telefone**: 10–11 dígitos locais com formatação progressiva `+55 (XX) XXXXX-XXXX`
 - **Senha**: 8+ caracteres, maiúscula, minúscula, número
 - **Username**: 3–20 caracteres, alfanumérico + underscore
 
@@ -113,6 +125,10 @@ O app usa `@react-navigation/native-stack` com navegação condicional baseada n
 | `PUT` | `/usuarios` | Atualizar perfil |
 | `POST` | `/medicoes/medicao_vital` | Registrar sinais vitais (BPM, SpO₂, PA) |
 | `POST` | `/medicoes/medicao_estresse` | Registrar medição de estresse (HRV, GSR) |
+| `GET` | `/medicoes/vitais/usuario/{usuarioId}` | Histórico de sinais vitais por usuário |
+| `GET` | `/medicoes/estresse/usuario/{usuarioId}` | Histórico de estresse por usuário |
+| `GET` | `/api/alertas/usuario/{usuarioId}` | Listagem de alertas do usuário |
+| `GET` | `/api/dispositivos/usuario/{usuarioId}` | Dispositivos do usuário (ativo/fallback) |
 
 Todas as chamadas autenticadas enviam `Authorization: Bearer {token}` no header.
 
@@ -168,15 +184,19 @@ NeocareApp/
 │   ├── CadastroDadosPessoaisScreen/# Step 1: dados pessoais + validação CPF
 │   ├── CadastroCredenciaisScreen/  # Step 2: username + senha com força
 │   ├── CadastroEnderecoScreen/     # Step 3: CEP (ViaCEP) + envio final
-│   ├── HomeScreen/                 # Dashboard com métricas APEX
+│   ├── HomeScreen/                 # Dashboard com métricas reais + recomendações
 │   ├── MedicaoScreen/              # Registro de vitais/estresse (mutation)
+│   ├── NotificacoesScreen/         # Lista de alertas reais
+│   ├── SobreAppScreen/             # Conteúdo institucional do app
 │   └── ProfileScreen/              # Visualização/edição de perfil
 ├── hooks/
 │   ├── useUserProfile.ts           # Formatação e refresh de perfil
-│   ├── useHealthMetrics.ts         # useQuery → APEX /metricas
-│   ├── useDailyData.ts             # useQuery + useMutation → APEX /resumo-diario
+│   ├── useHealthMetrics.ts         # Derivação de métricas reais (históricos API Java)
+│   ├── useHealthOverview.ts        # Resumo consolidado de saúde + alertas
+│   ├── useAlertas.ts               # useQuery → API /api/alertas/usuario/{id}
+│   ├── useDispositivos.ts          # useQuery → API /api/dispositivos/usuario/{id}
 │   ├── useRecommendations.ts       # useQuery + useMutation → APEX /recomendacoes
-│   ├── useMedicoes.ts              # useMutation → API /medicoes
+│   ├── useMedicoes.ts              # useMutation + históricos + fallback de dispositivo
 │   └── useProfileModal.ts          # Estado do modal de perfil
 ├── services/
 │   ├── api.ts                      # Axios client → Neocare-API (backend)
@@ -235,10 +255,12 @@ Logout:
 
 | Hook | Tipo | Query Key | Endpoint |
 |------|------|-----------|----------|
-| `useHealthMetrics` | `useQuery` | `['healthMetrics', username]` | APEX `/metricas/{username}` |
-| `useDailyData` | `useQuery` + `useMutation` | `['dailyData', username]` | APEX `/resumo-diario/{username}` |
+| `useHealthMetrics` | composição | `['medicoes', ...]` | API Java (histórico de medições) |
+| `useHealthOverview` | composição | `['medicoes', ...]`, `['alertas', ...]` | API Java (métricas + alertas) |
+| `useAlertas` | `useQuery` | `['alertas', 'usuario']` | `/api/alertas/usuario/{usuarioId}` |
+| `useDispositivos` | `useQuery` | `['dispositivos', 'usuario']` | `/api/dispositivos/usuario/{usuarioId}` |
 | `useRecommendations` | `useQuery` + `useMutation` | `['recommendations', username]` | APEX `/recomendacoes/{username}` |
-| `useMedicoes` | `useMutation` | — | API `/medicoes/medicao_vital`, `/medicoes/medicao_estresse` |
+| `useMedicoes` | `useMutation` + `useQuery` | `['medicoes', 'vital', 'historico']`, `['medicoes', 'estresse', 'historico']` | API `/medicoes/...` |
 
 - `staleTime` configurado em 2–5 minutos
 - `invalidateQueries` chamado após toda mutation

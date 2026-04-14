@@ -20,6 +20,7 @@ interface ProfileProps {
   visible?: boolean;
   onClose?: () => void;
   compact?: boolean; // Para exibição compacta no header
+  onNavigateSettings?: (route: 'Notificacoes' | 'SobreApp') => void;
 }
 
 export const ProfileAvatar: React.FC<{ name: string; size?: number }> = ({ 
@@ -73,7 +74,7 @@ export const ProfileCompact: React.FC<{ onPress: () => void }> = ({ onPress }) =
   );
 };
 
-export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
+export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose, onNavigateSettings }) => {
   const { user, logout } = useAuth();
   const { profileData, refreshProfile, isLoading, getFullName } = useUserProfile();
   const [activeTab, setActiveTab] = useState<'info' | 'health' | 'settings'>('info');
@@ -248,7 +249,13 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
           <View style={styles.tabContent}>
             <Text style={styles.sectionTitle}>Configurações</Text>
             
-            <TouchableOpacity style={styles.settingItem}>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => {
+                onClose?.();
+                onNavigateSettings?.('Notificacoes');
+              }}
+            >
               <Text style={styles.settingText}>Notificações</Text>
               <Text style={styles.settingArrow}>›</Text>
             </TouchableOpacity>
@@ -258,13 +265,14 @@ export const ProfileModal: React.FC<ProfileProps> = ({ visible, onClose }) => {
               <Text style={styles.settingArrow}>›</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.settingItem}>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => {
+                onClose?.();
+                onNavigateSettings?.('SobreApp');
+              }}
+            >
               <Text style={styles.settingText}>Sobre o App</Text>
-              <Text style={styles.settingArrow}>›</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.settingItem}>
-              <Text style={styles.settingText}>Suporte</Text>
               <Text style={styles.settingArrow}>›</Text>
             </TouchableOpacity>
           </View>

@@ -15,8 +15,8 @@ import { ProfileCompact, ProfileModal } from '../../_components/Profile';
 import { useHealthMetrics } from '../../hooks/useHealthMetrics';
 import { useRecommendations } from '../../hooks/useRecommendations';
 import { useProfileModal } from '../../hooks/useProfileModal';
-import { useDailyData } from '../../hooks/useDailyData';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { useHealthOverview } from '../../hooks/useHealthOverview';
 import { AppNavigationProp } from '../../types/navigation';
 
 const { width } = Dimensions.get('window');
@@ -45,31 +45,33 @@ export default function HomeScreen({ navigation }: { navigation: AppNavigationPr
     openProfile: openProfileModal, 
     closeProfile: closeProfileModal 
   } = useProfileModal();
-  
-  const { 
-    dailySummary, 
-    sensorStatus, 
-    isRefreshing: dailyRefreshing, 
-    refreshSensorData, 
-    progress 
-  } = useDailyData();
 
-  const isRefreshing = metricsRefreshing || dailyRefreshing;
+  const {
+    alertas,
+    historicoVital,
+    historicoEstresse,
+    healthSummary,
+    refreshAll,
+  } = useHealthOverview();
+
+  const isRefreshing = metricsRefreshing;
 
   const handleRefresh = async () => {
     await Promise.all([
       refreshMetrics(),
-      refreshSensorData()
+      refreshAll(),
     ]);
   };
 
-  const handleRecommendationPress = (recommendation: any) => {
-    completeRecommendation(recommendation.id);
-  };
+  const latestVitalDate = historicoVital[0]?.dataMedicao
+    ? new Date(historicoVital[0].dataMedicao).toLocaleString('pt-BR')
+    : 'Sem sincronização recente';
+
+  const latestEstresse = historicoEstresse[0]?.variacaoFrequenciaCardiaca?.toFixed(1) ?? '--';
 
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -83,39 +85,32 @@ export default function HomeScreen({ navigation }: { navigation: AppNavigationPr
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View>
-              <Text style={styles.greeting}>Bom dia, {profileData.firstName}!</Text>
-              <Text style={styles.subtitle}>Como você está se sentindo hoje?</Text>
+              <Text style={[styles.greeting, { color: colors.text }]}>Bom dia, {profileData.firstName}!</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{healthSummary.message}</Text>
             </View>
             <ProfileCompact onPress={() => openProfileModal()} />
           </View>
         </View>
 
-        {/* Status do Sensor */}
-        {sensorStatus && (
-        <View style={styles.sensorStatus}>
+        <View style={[styles.sensorStatus, { backgroundColor: colors.card }]}> 
           <View style={styles.sensorIndicator}>
-            <View style={[styles.statusDot, { backgroundColor: sensorStatus.isConnected ? '#4CAF50' : '#F44336' }]} />
-            <Text style={styles.sensorText}>
-              {sensorStatus.isConnected ? 'Pulseira conectada' : 'Pulseira desconectada'}
-            </Text>
-            {sensorStatus.batteryLevel && (
-              <Text style={styles.batteryText}>Bateria: {sensorStatus.batteryLevel}%</Text>
-            )}
+            <View style={[styles.statusDot, { backgroundColor: alertas.length > 0 ? '#FF9800' : '#4CAF50' }]} />
+            <Text style={[styles.sensorText, { color: colors.text }]}>Resumo de monitoramento</Text>
+            <Text style={[styles.batteryText, { color: colors.textSecondary }]}>Alertas: {alertas.length}</Text>
           </View>
-          <Text style={styles.lastSync}>Última sincronização: {sensorStatus.lastSync}</Text>
+          <Text style={[styles.lastSync, { color: colors.textSecondary }]}>Última medição vital: {latestVitalDate}</Text>
         </View>
-        )}
 
         {/* Métricas de Saúde */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Suas Métricas</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Suas Métricas</Text>
           <View style={styles.metricsGrid}>
             {healthMetrics.map((metric, index) => (
-              <TouchableOpacity key={index} style={styles.metricCard}>
-                <Text style={styles.metricTitle}>{metric.title}</Text>
+              <TouchableOpacity key={index} style={[styles.metricCard, { backgroundColor: colors.card }]}>
+                <Text style={[styles.metricTitle, { color: colors.textSecondary }]}>{metric.title}</Text>
                 <View style={styles.metricValueContainer}>
-                  <Text style={styles.metricValue}>{metric.value}</Text>
-                  <Text style={styles.metricUnit}>{metric.unit}</Text>
+                  <Text style={[styles.metricValue, { color: colors.text }]}>{metric.value}</Text>
+                  <Text style={[styles.metricUnit, { color: colors.textSecondary }]}>{metric.unit}</Text>
                 </View>
                 <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(metric.status) }]}>
                   <Text style={styles.statusText}>
@@ -129,16 +124,16 @@ export default function HomeScreen({ navigation }: { navigation: AppNavigationPr
 
         {/* Gráfico Simples */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Batimentos nas Últimas 24h</Text>
-          <View style={styles.chartContainer}>
-            <Text style={styles.chartPlaceholder}>📊 Gráfico de batimentos cardíacos</Text>
-            <Text style={styles.chartSubtext}>Variação: 68-85 bpm</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Estatística Real</Text>
+          <View style={[styles.chartContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.chartPlaceholder, { color: colors.text }]}>Nível de estresse atual: {latestEstresse}</Text>
+            <Text style={[styles.chartSubtext, { color: colors.textSecondary }]}>Baseado na medição mais recente da API Java</Text>
           </View>
         </View>
 
         {/* Recomendações */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recomendações para Você</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recomendações para Você</Text>
           {recommendations.map((recommendation) => (
             <TouchableOpacity 
               key={recommendation.id} 
@@ -146,6 +141,7 @@ export default function HomeScreen({ navigation }: { navigation: AppNavigationPr
                 styles.recommendationCard,
                 { backgroundColor: getRecommendationColor(recommendation.type) }
               ]}
+              onPress={() => completeRecommendation(recommendation.id)}
             >
               <Text style={styles.recommendationTitle}>{recommendation.title}</Text>
               <Text style={styles.recommendationDescription}>{recommendation.description}</Text>
@@ -156,22 +152,21 @@ export default function HomeScreen({ navigation }: { navigation: AppNavigationPr
           ))}
         </View>
 
-        {/* Resumo do Dia */}
         <View style={styles.section}>
-          <View style={styles.dailySummary}>
-            <Text style={styles.summaryTitle}>Resumo do Dia</Text>
+          <View style={[styles.dailySummary, { backgroundColor: colors.card }]}>
+            <Text style={[styles.summaryTitle, { color: colors.text }]}>Resumo de Saúde</Text>
             <View style={styles.summaryStats}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>7h 30m</Text>
-                <Text style={styles.summaryLabel}>Sono</Text>
+                <Text style={[styles.summaryValue, { color: colors.primary }]}>{historicoVital.length}</Text>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Medições vitais</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>15 min</Text>
-                <Text style={styles.summaryLabel}>Meditação</Text>
+                <Text style={[styles.summaryValue, { color: '#FF9800' }]}>{historicoEstresse.length}</Text>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Medições estresse</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>3</Text>
-                <Text style={styles.summaryLabel}>Exercícios</Text>
+                <Text style={[styles.summaryValue, { color: alertas.length > 0 ? '#F44336' : '#4CAF50' }]}>{alertas.length}</Text>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Alertas ativos</Text>
               </View>
             </View>
           </View>
@@ -179,21 +174,35 @@ export default function HomeScreen({ navigation }: { navigation: AppNavigationPr
 
         {/* Ações Rápidas */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ações Rápidas</Text>
-          <View style={styles.actionsRow}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Ações Rápidas</Text>
+          <View style={styles.actionsGrid}>
             <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: colors.primary }]}
+              style={[styles.actionCard, { backgroundColor: '#2E86DE' }]}
               onPress={() => navigation.navigate('Medicao')}>
               <Text style={styles.actionCardIcon}>📊</Text>
               <Text style={styles.actionCardTitle}>Nova Medição</Text>
-              <Text style={styles.actionCardSub}>Registrar dados do sensor</Text>
+              <Text style={styles.actionCardSub}>Registrar sinais vitais</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: '#6c757d' }]}
+              style={[styles.actionCard, { backgroundColor: '#16A085' }]}
               onPress={() => navigation.navigate('Perfil')}>
               <Text style={styles.actionCardIcon}>👤</Text>
               <Text style={styles.actionCardTitle}>Meu Perfil</Text>
               <Text style={styles.actionCardSub}>Ver e editar dados</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: '#F39C12' }]}
+              onPress={() => navigation.navigate('Notificacoes')}>
+              <Text style={styles.actionCardIcon}>🔔</Text>
+              <Text style={styles.actionCardTitle}>Notificações</Text>
+              <Text style={styles.actionCardSub}>Alertas em tempo real</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: '#8E44AD' }]}
+              onPress={() => navigation.navigate('SobreApp')}>
+              <Text style={styles.actionCardIcon}>ℹ️</Text>
+              <Text style={styles.actionCardTitle}>Sobre o App</Text>
+              <Text style={styles.actionCardSub}>Conheça a plataforma</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -203,6 +212,7 @@ export default function HomeScreen({ navigation }: { navigation: AppNavigationPr
       <ProfileModal 
         visible={isProfileModalVisible} 
         onClose={closeProfileModal} 
+        onNavigateSettings={(route) => navigation.navigate(route)}
       />
     </SafeAreaView>
   );
@@ -237,7 +247,6 @@ const styles = StyleSheet.create({
     margin: 20,
     marginTop: 0,
     padding: 15,
-    backgroundColor: '#fff',
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -277,7 +286,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 15,
   },
   metricsGrid: {
@@ -287,7 +295,6 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     width: (width - 50) / 2,
-    backgroundColor: '#fff',
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
@@ -333,7 +340,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   chartContainer: {
-    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
@@ -412,12 +418,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  actionsRow: {
+  actionsGrid: {
     flexDirection: 'row',
     gap: 12,
+    flexWrap: 'wrap',
   },
   actionCard: {
-    flex: 1,
+    width: (width - 52) / 2,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
