@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiLogin, apiRegisterUser, apiGetUserByUsername, apiUpdateUser, UpdateUserRequest } from '../services/api';
+import { apiLogin, apiRegisterUser, apiGetUserByUsername, apiUpdateUser, setSessionExpiredHandler, UpdateUserRequest } from '../services/api';
 import { AppError, ErrorType } from '../utils/errorUtils';
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   nome: string;
   sobrenome?: string;
@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const userData: User = {
-        id: returnedUsername || username,
+        id: 0,
         username: returnedUsername || username,
         nome: returnedUsername || username,
         email: '',
@@ -165,6 +165,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dataNascimento: '',
         roles: roles,
       };
+
+      const userProfile = await apiGetUserByUsername(userData.username, token);
+      userData.id = Number(userProfile.id ?? 0);
+      userData.nome = userProfile.nome;
+      userData.sobrenome = userProfile.sobrenome;
+      userData.email = userProfile.email;
+      userData.telefone = userProfile.telefone;
+      userData.dataNascimento = userProfile.dataNascimento;
+      userData.sexo = userProfile.sexo;
+      userData.altura = userProfile.altura;
+      userData.peso = userProfile.peso;
+      userData.cpf = userProfile.cpf;
+      userData.endereco = userProfile.endereco;
+      userData.ativo = userProfile.ativo;
 
       await saveUserData(userData, token);
 
@@ -260,9 +274,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.log('🔍 Antes:', { id: savedUser.id, username: savedUser.username, nome: savedUser.nome });
 
             if (savedUser.id) {
-              savedUser.username = savedUser.id;
+              const storedUsername = await AsyncStorage.getItem(STORAGE_KEYS.USERNAME);
+              if (!storedUsername) {
+                await clearUserData();
+                return;
+              }
+              savedUser.username = storedUsername;
               await saveUserData(savedUser, token);
-              console.log('✅ Username corrigido de', savedUser.nome, 'para', savedUser.id);
+              console.log('✅ Username corrigido para', savedUser.username);
+            }
+          }
+
+          if (!savedUser.id || Number(savedUser.id) <= 0) {
+            try {
+              const profile = await apiGetUserByUsername(savedUser.username, token);
+              savedUser.id = Number(profile.id ?? 0);
+              await saveUserData(savedUser, token);
+            } catch (profileError) {
+              console.error('❌ Não foi possível recuperar ID do usuário:', profileError);
             }
           }
 
@@ -319,7 +348,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const userProfile = await apiGetUserByUsername(user.username, token);
 
       const updatedUser: User = {
-        id: user.id,
+        id: Number(userProfile.id ?? user.id),
         username: user.username,
         nome: userProfile.nome,
         sobrenome: userProfile.sobrenome,
@@ -356,7 +385,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         nome: user?.nome
       });
 
-      if (!user?.username || !user?.id) {
+      if (!user?.username || Number(user?.id) <= 0) {
         console.log('⚠️ Não é possível atualizar perfil: usuário não autenticado');
         console.log('🔍 Motivo:', {
           hasUsername: !!user?.username,
@@ -432,10 +461,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('🔄 Detectado usuário sem username, iniciando migração...');
 
         if (savedUser.id) {
-          savedUser.username = savedUser.id;
+          const storedUsername = await AsyncStorage.getItem(STORAGE_KEYS.USERNAME);
+          if (!storedUsername) {
+            await clearUserData();
+            return;
+          }
+          savedUser.username = storedUsername;
           await saveUserData(savedUser, token || '');
           console.log('✅ Usuário migrado com username:', savedUser.username);
-          console.log('🔍 Migração: id =', savedUser.id, '→ username =', savedUser.username);
+          console.log('🔍 Migração: username restaurado para', savedUser.username);
 
           console.log('📋 Verificando dados após migração:');
           await debugAuthStorage();
@@ -457,6 +491,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await checkAuthState();
     };
     initializeAuth();
+  }, []);
+
+  useEffect(() => {
+    setSessionExpiredHandler(async () => {
+      await logout();
+      console.log('⚠️ Sessão expirada. Faça login novamente.');
+    });
+
+    return () => {
+      setSessionExpiredHandler(null);
+    };
   }, []);
 
   const value: AuthContextType = {
@@ -527,9 +572,13 @@ export const fixUsername = async (): Promise<void> => {
       const user = JSON.parse(userData);
       console.log('👤 Usuário atual:', { id: user.id, username: user.username, nome: user.nome });
 
-      if (user.id && user.username !== user.id) {
-        console.log('🔄 Corrigindo username de', user.username, 'para', user.id);
-        user.username = user.id;
+      if (user.id && (!user.username || user.username.trim().length === 0)) {
+        const storedUsername = await AsyncStorage.getItem(STORAGE_KEYS.USERNAME);
+        if (!storedUsername) {
+          return;
+        }
+        console.log('🔄 Corrigindo username para valor persistido');
+        user.username = storedUsername;
 
         await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
         await AsyncStorage.setItem(STORAGE_KEYS.USERNAME, user.username);

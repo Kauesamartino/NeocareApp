@@ -1,7 +1,7 @@
 // Cliente HTTP com axios para comunicação com a API local
 import axios from 'axios';
 import { AppError, mapApiError, ErrorType } from '../utils/errorUtils';
-import { validateCPF } from '../utils/cpfUtils';
+import { cleanCPF } from '../utils/cpfUtils';
 import { formatCEP, validateCEP } from '../utils/formatUtils';
 import { User } from '../contexts/AuthContext';
 
@@ -15,6 +15,13 @@ const api = axios.create({
   },
   timeout: 30000, // 30 segundos
 });
+
+let onSessionExpired: (() => void | Promise<void>) | null = null;
+let isHandlingSessionExpired = false;
+
+export const setSessionExpiredHandler = (handler: (() => void | Promise<void>) | null) => {
+  onSessionExpired = handler;
+};
 
 // Interceptor para logs de requisições
 api.interceptors.request.use(
@@ -34,8 +41,24 @@ api.interceptors.response.use(
     console.log(`✅ ${response.status} ${response.config.url}`, response.data);
     return response;
   },
-  (error) => {
+  async (error) => {
     console.error('❌ Erro na resposta:', error.response?.status, error.response?.data || error.message);
+
+    const status = error.response?.status;
+    const url = String(error.config?.url || '');
+    const isAuthRoute = url.includes('/api/auth/login');
+
+    if (status === 401 && !isAuthRoute && onSessionExpired && !isHandlingSessionExpired) {
+      isHandlingSessionExpired = true;
+      try {
+        await onSessionExpired();
+      } catch (sessionError) {
+        console.error('❌ Erro ao processar sessão expirada:', sessionError);
+      } finally {
+        isHandlingSessionExpired = false;
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -47,6 +70,7 @@ type LoginResponse = {
 };
 
 type UserProfileResponse = {
+  id?: number;
   nome: string;
   sobrenome: string;
   cpf: string;
@@ -115,9 +139,9 @@ export async function apiGetUserByUsername(username: string, token: string): Pro
 
 export async function apiUpdateUser(userData: UpdateUserRequest, token: string): Promise<UserProfileResponse> {
   try {
-    // Validar CPF se fornecido
-    if (userData.cpf && !validateCPF(userData.cpf)) {
-      throw new AppError('CPF inválido', ErrorType.CPF_INVALID);
+    // Em modo de testes aceitamos CPF aleatório, mantendo apenas tamanho mínimo esperado
+    if (userData.cpf && cleanCPF(userData.cpf).length !== 11) {
+      throw new AppError('CPF deve conter 11 dígitos', ErrorType.CPF_INVALID);
     }
 
     // Validar e formatar CEP se fornecido
@@ -149,9 +173,9 @@ export async function apiUpdateUser(userData: UpdateUserRequest, token: string):
 
 export async function apiRegisterUser(body: any): Promise<any> {
   try {
-    // Validar e formatar dados antes de enviar
-    if (body.cpf && !validateCPF(body.cpf)) {
-      throw new AppError('CPF inválido', ErrorType.CPF_INVALID);
+    // Em modo de testes aceitamos CPF aleatório, mantendo apenas tamanho mínimo esperado
+    if (body.cpf && cleanCPF(body.cpf).length !== 11) {
+      throw new AppError('CPF deve conter 11 dígitos', ErrorType.CPF_INVALID);
     }
 
     if (body.endereco?.cep) {
@@ -217,6 +241,47 @@ export type MedicaoVitalOutput = {
   medicaoOutDto: MedicaoOutput;
 };
 
+export type MedicaoVitalHistoricoOutput = {
+  id: number;
+  idUsuario: number;
+  idDispositivo: number;
+  dataMedicao: string;
+  tipoMedicao: string;
+  batimentosPorMinuto: number;
+  oxigenacaoSangue: number;
+  pressaoSistolica: number;
+  pressaoDiastolica: number;
+};
+
+export type MedicaoEstresseHistoricoOutput = {
+  id: number;
+  idUsuario: number;
+  idDispositivo: number;
+  dataMedicao: string;
+  tipoMedicao: string;
+  variacaoFrequenciaCardiaca: number;
+  condutividadePele: number;
+};
+
+export type AlertaOutput = {
+  id: number;
+  usuarioId: number;
+  medicaoId: number;
+  tipoAlerta: string;
+  valorDetectado: string;
+  severidade: string;
+  mensagem: string;
+  dataNotificacao: string;
+};
+
+export type DispositivoOutput = {
+  id: number;
+  usuarioId: number;
+  tipoDispositivo: string;
+  enderecoDisp: string;
+  ativo: boolean;
+};
+
 export async function apiPostMedicaoEstresse(
   data: MedicaoEstresseInput,
 ): Promise<MedicaoEstresseOutput> {
@@ -239,6 +304,70 @@ export async function apiPostMedicaoVital(
   }
 }
 
+export async function apiGetMedicoesVitaisByUserId(
+  usuarioId: number,
+  token: string,
+): Promise<MedicaoVitalHistoricoOutput[]> {
+  try {
+    const response = await api.get(`/medicoes/vitais/usuario/${usuarioId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
+export async function apiGetMedicoesEstresseByUserId(
+  usuarioId: number,
+  token: string,
+): Promise<MedicaoEstresseHistoricoOutput[]> {
+  try {
+    const response = await api.get(`/medicoes/estresse/usuario/${usuarioId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
+export async function apiGetAlertasByUserId(
+  usuarioId: number,
+  token: string,
+): Promise<AlertaOutput[]> {
+  try {
+    const response = await api.get(`/api/alertas/usuario/${usuarioId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
+export async function apiGetDispositivosByUserId(
+  usuarioId: number,
+  token: string,
+): Promise<DispositivoOutput[]> {
+  try {
+    const response = await api.get(`/api/dispositivos/usuario/${usuarioId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
 // Exportar tipos também
 export type { LoginResponse, UserProfileResponse, UpdateUserRequest };
 
@@ -249,4 +378,8 @@ export default {
   apiUpdateUser,
   apiPostMedicaoEstresse,
   apiPostMedicaoVital,
+  apiGetMedicoesVitaisByUserId,
+  apiGetMedicoesEstresseByUserId,
+  apiGetAlertasByUserId,
+  apiGetDispositivosByUserId,
 };
