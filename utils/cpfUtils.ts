@@ -13,8 +13,21 @@ export const cleanCPF = (cpf: string): string => {
  * Formata CPF com pontos e hífen
  */
 export const formatCPF = (cpf: string): string => {
-  const numbers = cleanCPF(cpf);
-  return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  const numbers = cleanCPF(cpf).slice(0, 11);
+
+  if (numbers.length <= 3) {
+    return numbers;
+  }
+
+  if (numbers.length <= 6) {
+    return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+  }
+
+  if (numbers.length <= 9) {
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+  }
+
+  return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
 };
 
 /**

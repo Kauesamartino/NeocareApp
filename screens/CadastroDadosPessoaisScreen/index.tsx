@@ -15,7 +15,7 @@ import {
 import { DadosPessoais } from '../../types/cadastro';
 import { AppNavigationProp } from '../../types/navigation';
 import { formatPhone, formatDate, unformatTelefone } from '../../utils/formatUtils';
-import { validateCPF, formatCPF } from '../../utils/cpfUtils';
+import { cleanCPF, formatCPF } from '../../utils/cpfUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -63,8 +63,8 @@ export default function CadastroDadosPessoaisScreen({ navigation }: CadastroDado
       return false;
     }
 
-    if (!validateCPF(cpf)) {
-      Alert.alert('Erro', 'Por favor, insira um CPF válido');
+    if (cleanCPF(cpf).length !== 11) {
+      Alert.alert('Erro', 'Por favor, insira um CPF com 11 dígitos');
       return false;
     }
 

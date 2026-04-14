@@ -57,9 +57,10 @@ export function formatTelefone(telefone: string): string {
 
   // Remove tudo que não é dígito
   let digits = telefone.replace(/\D/g, '');
+  const hasExplicitCountryCode = telefone.trim().startsWith('+55');
 
-  // Se começa com 55 e tem 12-13 dígitos, já inclui código do país
-  if (digits.startsWith('55') && digits.length >= 12) {
+  // Remove um prefixo de país já digitado para evitar duplicação em input controlado
+  if ((hasExplicitCountryCode && digits.startsWith('55')) || (digits.startsWith('55') && digits.length > 11)) {
     digits = digits.slice(2);
   }
 
@@ -99,7 +100,8 @@ export function toPhoneAPI(telefone: string): string {
 export function unformatTelefone(telefone: string): string {
   if (!telefone) return '';
   let digits = telefone.replace(/\D/g, '');
-  if (digits.startsWith('55') && digits.length >= 12) {
+  const hasExplicitCountryCode = telefone.trim().startsWith('+55');
+  if ((hasExplicitCountryCode && digits.startsWith('55')) || (digits.startsWith('55') && digits.length > 11)) {
     return digits.slice(2);
   }
   return digits;
